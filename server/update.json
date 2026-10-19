@@ -1,0 +1,7 @@
+{
+  "versionCode": 3,
+  "versionName": "0.3.0",
+  "apkUrl": "https://updates.example.com/homescreen-3.apk",
+  "sha256": "REPLACE_WITH_APK_SHA256",
+  "notes": "Example only. Generate a real manifest with scripts/prepare-release.py."
+}

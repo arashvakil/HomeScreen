@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="432" viewBox="0 0 108 108">
+<path d="M25,2 H83 Q106,2 106,25 V83 Q106,106 83,106 H25 Q2,106 2,83 V25 Q2,2 25,2 Z" fill="#101B39" opacity="1" fill-rule="nonzero"/>
+<path d="M25,3 H83 Q105,3 105,25 V57 C74,72 34,58 3,36 V25 Q3,3 25,3 Z" fill="#264D89" opacity="1" fill-rule="nonzero"/>
+<path d="M25,3 H76 C59,16 29,36 3,32 V25 Q3,3 25,3 Z" fill="#3B72B0" opacity="0.5" fill-rule="nonzero"/>
+<path d="M106,54 V83 Q106,106 83,106 H45 C57,82 75,68 106,54 Z" fill="#6456AE" opacity="0.42" fill-rule="nonzero"/>
+<path d="M25,3 H83 Q105,3 105,25 V83 Q105,105 83,105 H25 Q3,105 3,83 V25 Q3,3 25,3 Z M25,4 Q4,4 4,25 V83 Q4,104 25,104 H83 Q104,104 104,83 V25 Q104,4 83,4 Z" fill="#FFFFFF" opacity="0.12" fill-rule="evenodd"/>
+<path d="M29,54 L50,36 Q54,32 58,36 L79,54 Q81,56 79,58 Q77,60 75,58 L73,56 V76 Q73,81 68,81 H40 Q35,81 35,76 V56 L33,58 Q31,60 29,58 Q27,56 29,54 Z" fill="#08132C" opacity="0.3" fill-rule="nonzero"/>
+<path d="M29,49 L50,31 Q54,27 58,31 L79,49 Q81,51 79,53 Q77,55 75,53 L54,35 L33,53 Q31,55 29,53 Q27,51 29,49 Z" fill="#F4F8FF" opacity="1" fill-rule="nonzero"/>
+<path d="M35,53 L41,48 V71 Q41,73 43,73 H48 V60 Q48,58 50,58 H58 Q60,58 60,60 V73 H65 Q67,73 67,71 V48 L73,53 V73 Q73,79 67,79 H41 Q35,79 35,73 Z" fill="#F4F8FF" opacity="1" fill-rule="nonzero"/>
+<path d="M43,85 H65 Q66,85 66,86 Q66,87 65,87 H43 Q42,87 42,86 Q42,85 43,85 Z" fill="#C5DEFF" opacity="0.5" fill-rule="nonzero"/>
+</svg>
