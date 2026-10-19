@@ -114,6 +114,16 @@ Its example manifest is not a production update. For historical package builds o
 `-PpersonalLauncher=false` retains `nyc.arash.homescreen` and uses `keystore.properties`;
 serve a separate matching update channel. Do not mix package IDs or signing keys.
 
+## License
+
+HomeScreen is open source under the [MIT License](LICENSE), copyright 2026 Arash Vakil.
+Third-party dependencies retain their respective licenses.
+
+[Home on Fire](https://github.com/toolicious/home-on-fire) is a separate companion
+application licensed GPL-3.0-or-later. It is downloaded from its upstream release
+and is not included in HomeScreen's source or APK; HomeScreen's MIT license does
+not relicense that companion.
+
 ## Credits
 
 Home-button integration is provided by [Home on Fire](https://github.com/toolicious/home-on-fire). HomeScreen is an
