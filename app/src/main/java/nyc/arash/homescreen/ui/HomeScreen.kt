@@ -124,12 +124,23 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 if (!allApps && location != null) SourceLink(weatherCredit, "https://open-meteo.com/")
             }
             Spacer(Modifier.height(5.dp))
-            Text(if (allApps) "All your apps." else weatherTitle, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!allApps && reading != null) {
-                Spacer(Modifier.height(3.dp))
-                Text(reading.precipitationSummary(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()), color = Color(0xFFB5C8E4), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(5.dp))
-            } else Spacer(Modifier.height(22.dp))
+            if (!allApps && reading != null && location != null) {
+                Row(Modifier.fillMaxWidth().height(63.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                    Box(Modifier.size(52.dp).background(Color(0x0CFFFFFF), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+                        WeatherGlyph(reading.code, Modifier.size(33.dp))
+                    }
+                    Text(weather.settings.unit.format(reading.celsius), color = Color.White, fontSize = 43.sp, fontWeight = FontWeight.Light, letterSpacing = (-1.8).sp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(location.name, color = Color(0xFFF0F4FA), fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(weatherDescription(reading.code), color = Color(0xFF9EB3CB), fontSize = 12.sp)
+                    }
+                    WeatherOutlook(reading.precipitationSummary(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()), Modifier.width(330.dp), onClick = { forecastOpen = true })
+                }
+                Spacer(Modifier.height(8.dp))
+            } else {
+                Text(if (allApps) "All your apps." else weatherTitle, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(22.dp))
+            }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
                 state = gridState,
@@ -194,14 +205,14 @@ private fun SectionHeading(title: String, hint: String) {
 @Composable
 internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, compact: Boolean = false) {
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(if (compact) 10.dp else 14.dp)
     Box(
         modifier
             .navigationSound()
             .onFocusChanged { focused = it.isFocused }
             .clip(shape)
-            .background(if (focused) Color.White else if (selected) Color(0x22FFFFFF) else Color.Transparent)
-            .border(if (focused) 1.dp else 0.dp, Color(0x66FFFFFF), shape)
+            .background(if (focused) Color(0xFFF0F7FC) else if (selected) Color(0x26FFFFFF) else if (compact) Color(0x10FFFFFF) else Color(0x08FFFFFF))
+            .border(1.dp, if (focused) Color.White else Color.Transparent, shape)
             .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = if (compact) 6.dp else 19.dp, vertical = if (compact) 6.dp else 9.dp),
         contentAlignment = Alignment.Center,

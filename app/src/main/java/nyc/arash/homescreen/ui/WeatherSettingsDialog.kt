@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -104,7 +106,7 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
         }
         Column(
             Modifier.width(620.dp).heightIn(max = 470.dp).clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF111D32)).border(.5.dp, Color(0x33FFFFFF), RoundedCornerShape(24.dp))
+                .background(WeatherPanelBrush).border(1.dp, Color(0x1FFFFFFF), RoundedCornerShape(24.dp))
                 .verticalScroll(rememberScrollState()).padding(26.dp)
                 .onPreviewKeyEvent { event ->
                     if (!searching || !editing || event.type != KeyEventType.KeyDown) false else when (event.nativeKeyEvent.keyCode) {
@@ -149,16 +151,19 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
                 NavChip("Back to Settings", onClick = ::leaveSearch, modifier = Modifier.fillMaxWidth())
                 SourceLink("Places by GeoNames", "https://www.geonames.org/")
             } else {
+                Text("Your forecast, just how you like it.", color = Color(0xFF92A9BD), fontSize = 12.sp)
+                Spacer(Modifier.height(3.dp))
                 Text("WEATHER", color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
-                NavChip(weather.settings.location?.label ?: "Choose a city", onClick = { editing = true; searching = true }, modifier = Modifier.fillMaxWidth().focusRequester(first))
+                SettingsRow(weather.settings.location?.name ?: "Choose a city", weather.settings.location?.label ?: "Search any city or ZIP code", Icons.Outlined.Place,
+                    modifier = Modifier.fillMaxWidth().focusRequester(first), onClick = { editing = true; searching = true })
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TemperatureUnit.entries.forEach { unit ->
-                        NavChip(if (unit == TemperatureUnit.FAHRENHEIT) "Fahrenheit  °F" else "Celsius  °C", selected = weather.settings.unit == unit, onClick = {
+                        NavChip((if (weather.settings.unit == unit) "✓  " else "") + if (unit == TemperatureUnit.FAHRENHEIT) "Fahrenheit  °F" else "Celsius  °C", selected = weather.settings.unit == unit, onClick = {
                             weather.configure(weather.settings.copy(unit = unit))
                         }, modifier = Modifier.weight(1f))
                     }
                 }
-                Text("Saved on this TV. Your selected city is sent to Open-Meteo for weather. No device location access is needed.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
+                Text("Your chosen city and units are remembered on this TV.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
                 SourceLink("Weather by Open-Meteo (CC BY 4.0)", "https://open-meteo.com/")
                 Spacer(Modifier.height(3.dp))
                 NavChip("Fire TV Settings", onClick = {
@@ -177,7 +182,7 @@ internal fun SourceLink(label: String, url: String) {
     var focused by remember { mutableStateOf(false) }
     Text(label, color = if (focused) Color.White else Color(0xFF899BB9), fontSize = 10.sp,
         modifier = Modifier.navigationSound().onFocusChanged { focused = it.isFocused }
-            .border(if (focused) 1.dp else 0.dp, Color.White, RoundedCornerShape(4.dp))
+            .border(1.dp, if (focused) Color.White else Color.Transparent, RoundedCornerShape(4.dp))
             .clickable {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                     .onFailure { Toast.makeText(context, url, Toast.LENGTH_LONG).show() }
