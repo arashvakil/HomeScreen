@@ -127,7 +127,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
             if (!allApps && reading != null && location != null) {
                 Row(Modifier.fillMaxWidth().height(63.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                     Box(Modifier.size(52.dp).background(Color(0x0CFFFFFF), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
-                        WeatherGlyph(reading.code, Modifier.size(33.dp))
+                        WeatherGlyph(reading.code, Modifier.size(33.dp), reading.isDay)
                     }
                     Text(weather.settings.unit.format(reading.celsius), color = Color.White, fontSize = 43.sp, fontWeight = FontWeight.Light, letterSpacing = (-1.8).sp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

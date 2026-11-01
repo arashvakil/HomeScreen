@@ -69,7 +69,7 @@ internal fun WeatherForecastDialog(weather: WeatherState, onSettings: () -> Unit
                 val zone = ZoneId.of(reading.timezone)
                 fun date(time: Long, pattern: String): String = Instant.ofEpochMilli(time).atZone(zone).format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
                 Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                    WeatherGlyph(reading.code, Modifier.size(60.dp))
+                    WeatherGlyph(reading.code, Modifier.size(60.dp), reading.isDay)
                     Text(unit.format(reading.celsius), color = Color.White, fontSize = 53.sp, fontWeight = FontWeight.Light, letterSpacing = (-2).sp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                         Text(weatherDescription(reading.code), color = Color(0xFFE3EEF7), fontSize = 17.sp)
@@ -88,7 +88,7 @@ internal fun WeatherForecastDialog(weather: WeatherState, onSettings: () -> Unit
                     items(reading.hourly.filter { it.time > now }.take(24), key = { it.time }) { hour ->
                         ForecastCard(Modifier.width(93.dp)) {
                             Text(date(hour.time, "EEE h a"), color = Color(0xFFA6B6D0), fontSize = 11.sp)
-                            WeatherGlyph(hour.code ?: -1, Modifier.size(26.dp).padding(vertical = 2.dp))
+                            WeatherGlyph(hour.code ?: -1, Modifier.size(26.dp).padding(vertical = 2.dp), hour.isDay)
                             Text(hour.celsius?.let { unit.format(it) } ?: "—", color = Color.White, fontSize = 23.sp, fontWeight = FontWeight.Light)
                             Text(hour.probability?.let { "$it% precip." } ?: "Chance unknown", color = Color(0xFFD3E3FF), fontSize = 10.sp)
                             Text(if ((hour.snowCm ?: 0.0) > 0) "Snow ${unit.snow(hour.snowCm)}" else unit.precipitation(hour.precipitationMm), color = Color(0xFFA6B6D0), fontSize = 10.sp)

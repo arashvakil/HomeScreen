@@ -24,7 +24,7 @@ internal data class WeatherSettings(val location: WeatherLocation? = null, val u
 
 internal data class WeatherReading(
     val locationKey: String, val celsius: Double, val code: Int, val observedAt: Long, val fetchedAt: Long,
-    val timezone: String = "UTC", val hourly: List<HourlyForecast> = emptyList(), val daily: List<DailyForecast> = emptyList(),
+    val timezone: String = "UTC", val hourly: List<HourlyForecast> = emptyList(), val daily: List<DailyForecast> = emptyList(), val isDay: Boolean? = null,
 ) {
     init {
         require(celsius.isFinite() && celsius in -100.0..70.0)
@@ -59,7 +59,7 @@ internal fun weatherDescription(code: Int): String = when (code) {
 
 internal data class HourlyForecast(
     val time: Long, val celsius: Double?, val probability: Int?, val precipitationMm: Double?,
-    val snowCm: Double?, val code: Int?,
+    val snowCm: Double?, val code: Int?, val isDay: Boolean? = null,
 )
 
 internal data class DailyForecast(
@@ -107,7 +107,7 @@ internal fun WeatherReading.precipitationSummary(now: Long): String {
             "$day around ${date.format(DateTimeFormatter.ofPattern("h a", Locale.getDefault()))}"
         }
         val chance = hour.probability?.let { " · $it% chance" }.orEmpty()
-        return "${precipitationKind(hour)} ${if (outlook.expected) "expected" else "possible"} $whenText$chance"
+        return "${precipitationKind(hour)} ${if (outlook.expected) "forecast" else "possible"} $whenText$chance"
     }
     return outlook.dryThrough?.let {
         val through = Instant.ofEpochMilli(it).atZone(zone).format(DateTimeFormatter.ofPattern("EEE h a", Locale.getDefault()))

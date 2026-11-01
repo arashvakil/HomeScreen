@@ -74,7 +74,7 @@ class WeatherModelsTest {
     @Test fun `summary uses city timezone and omits past events`() {
         val event = HourlyForecast(now + 3_599_000, 2.0, 80, 0.5, 0.0, 61)
         val value = reading.copy(timezone = "America/New_York", hourly = listOf(event))
-        assertTrue(value.precipitationSummary(now).contains("Rain expected within the hour"))
+        assertTrue(value.precipitationSummary(now).contains("Rain forecast within the hour"))
         assertNull(value.precipitationOutlook(now + 3_600_000).hour)
         assertEquals("1.00 in", TemperatureUnit.FAHRENHEIT.precipitation(25.4))
         assertEquals("1.0 in", TemperatureUnit.FAHRENHEIT.snow(2.54))

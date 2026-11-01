@@ -26,9 +26,9 @@ internal val WeatherPanelBrush = Brush.linearGradient(listOf(Color(0xFF192E46), 
 internal val WeatherAccent = Color(0xFFB8DEED)
 
 @Composable
-internal fun WeatherGlyph(code: Int, modifier: Modifier = Modifier) {
+internal fun WeatherGlyph(code: Int, modifier: Modifier = Modifier, isDay: Boolean? = null) {
     val (icon, tint) = when (code) {
-        0, 1 -> Icons.Outlined.WbSunny to Color(0xFFF4D795)
+        0, 1 -> if (isDay == false) Icons.Outlined.NightsStay to Color(0xFFCFD7F3) else Icons.Outlined.WbSunny to Color(0xFFF4D795)
         45, 48 -> Icons.Outlined.Air to Color(0xFFB7CADB)
         71, 73, 75, 77, 85, 86 -> Icons.Outlined.AcUnit to Color(0xFFBDE7F5)
         95, 96, 97, 99 -> Icons.Outlined.FlashOn to Color(0xFFE3CEFA)

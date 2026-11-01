@@ -26,16 +26,17 @@ internal class WeatherStore(context: Context) {
 
     fun cached(): WeatherReading? = runCatching {
         val json = JSONObject(preferences.getString("reading", "").orEmpty())
+        check(json.getInt("schema") == 2)
         val hours = json.getJSONArray("hourly")
         val days = json.getJSONArray("daily")
         WeatherReading(json.getString("locationKey"), json.getDouble("celsius"), json.getInt("code"), json.getLong("observedAt"), json.getLong("fetchedAt"),
             json.getString("timezone"), (0 until hours.length()).map { index ->
                 val h = hours.getJSONObject(index)
-                HourlyForecast(h.getLong("time"), h.number("celsius"), h.number("probability")?.toInt(), h.number("precipitationMm"), h.number("snowCm"), h.number("code")?.toInt())
+                HourlyForecast(h.getLong("time"), h.number("celsius"), h.number("probability")?.toInt(), h.number("precipitationMm"), h.number("snowCm"), h.number("code")?.toInt(), if (h.isNull("isDay")) null else h.getBoolean("isDay"))
             }, (0 until days.length()).map { index ->
                 val d = days.getJSONObject(index)
                 DailyForecast(d.getLong("time"), d.number("lowC"), d.number("highC"), d.number("probability")?.toInt(), d.number("precipitationMm"), d.number("snowCm"), d.number("code")?.toInt())
-            })
+            }, if (json.isNull("isDay")) null else json.getBoolean("isDay"))
     }.getOrNull()
 
     private fun JSONObject.number(key: String): Double? = optDouble(key).takeIf { it.isFinite() }
@@ -43,11 +44,11 @@ internal class WeatherStore(context: Context) {
     fun cache(reading: WeatherReading) {
         val hours = JSONArray()
         reading.hourly.forEach { h -> hours.put(JSONObject().put("time", h.time).put("celsius", h.celsius)
-            .put("probability", h.probability).put("precipitationMm", h.precipitationMm).put("snowCm", h.snowCm).put("code", h.code)) }
+            .put("probability", h.probability).put("precipitationMm", h.precipitationMm).put("snowCm", h.snowCm).put("code", h.code).put("isDay", h.isDay)) }
         val days = JSONArray()
         reading.daily.forEach { d -> days.put(JSONObject().put("time", d.time).put("lowC", d.lowC).put("highC", d.highC)
             .put("probability", d.probability).put("precipitationMm", d.precipitationMm).put("snowCm", d.snowCm).put("code", d.code)) }
-        preferences.edit().putString("reading", JSONObject().put("locationKey", reading.locationKey)
+        preferences.edit().putString("reading", JSONObject().put("schema", 2).put("isDay", reading.isDay).put("locationKey", reading.locationKey)
             .put("celsius", reading.celsius).put("code", reading.code).put("observedAt", reading.observedAt)
             .put("fetchedAt", reading.fetchedAt).put("timezone", reading.timezone).put("hourly", hours).put("daily", days).toString()).apply()
     }
