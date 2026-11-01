@@ -15,6 +15,8 @@ autoplay previews, or promoted content in the launcher.
 - A clean six-column app grid, Home and All Apps views, clock, and Settings shortcut.
 - Favorites you can reorder and save. Highlight an app and press **Menu** or hold **OK**.
 - Stable focus borders with no pulsing or zoom animation.
+- Current weather for a city you choose, with saved Fahrenheit or Celsius units.
+- A soft beep when D-pad navigation moves focus, using the TV’s system sound volume.
 - Home button redirection and launch on boot through the companion **Home on Fire**.
 - Built-in update checks: signed release APKs, SHA-256 verification, and Android's install flow.
 
@@ -32,7 +34,7 @@ Fire OS is required; Vega OS is not supported by this Android APK.
 3. Download this repository, then run:
 
    ```sh
-   ./scripts/setup.sh <fire-tv-ip>:5555 /path/to/homescreen-3.apk
+   ./scripts/setup.sh <fire-tv-ip>:5555 /path/to/homescreen-4.apk
    ```
 
 The script installs HomeScreen plus the official, checksum-pinned
@@ -54,6 +56,45 @@ accessibility service or uninstall the companion.
 You can also install just the launcher with `adb -s <fire-tv-ip>:5555 install -r <apk>`
 and open Home from your apps. Home-button and boot integration require the companion.
 
+## Weather and settings
+
+Select **Set up weather** on a fresh installation, or open the gear for **Home Settings**. Choose **Choose a city**, enter
+a city or postal code with the app’s remote-friendly keyboard, select **Search**,
+then pick the matching city and region. **Use New York** provides a one-click shortcut. **Delete**, **Clear**, and **Back to Settings**
+are explicit controls. **Back** returns directly to Settings. This screen never opens
+the Fire TV system keyboard. A connected hardware keyboard can also type/search.
+Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
+keeps a **Fire TV Settings** shortcut. Back from city search returns to Home Settings.
+
+The home header summarizes the next possible or forecast precipitation. Open
+**Weather** for the next 24 hours and a seven-day outlook, including precipitation
+chance, total liquid-equivalent precipitation, and snowfall. Move focus across hour
+cards and down daily cards with the remote to scroll. Forecast times follow the
+selected city’s timezone. Hourly amounts and chances cover the hour ending at the
+shown time; the next-event summary uses the start of that interval. Fahrenheit uses inches for precipitation; Celsius uses
+millimeters for total precipitation and centimeters for snow.
+
+“Possible” means at least a 40% hourly chance; “forecast” means predicted hourly
+precipitation of at least 0.1 mm or snow of at least 0.1 cm. The next-event summary
+includes rain, snow, freezing precipitation, and thunderstorms. A dry summary only
+covers the available forecast window with complete precipitation data. These are
+forecast estimates and can change.
+
+No city is assumed on first launch. Weather uses the free non-commercial
+[Open-Meteo API](https://open-meteo.com/en/docs); city search uses its
+[GeoNames-backed geocoding API](https://open-meteo.com/en/docs/geocoding-api).
+The chosen city/search term and city coordinates are sent to those services; the
+launcher does not request GPS, infer an IP location, or add an account or API key.
+Weather data is attributed to Open-Meteo under CC BY 4.0. Commercial distributions
+must arrange an appropriate provider plan before using the free endpoint.
+
+Current conditions refresh about every 15 minutes while the launcher is visible.
+Returning home reuses a fresh cached reading instead of making another request.
+A failed update keeps a recent reading with an explicit notice and its observation
+time; readings over two hours old are hidden. Without a cached reading, connection
+failures show weather unavailable. Search errors can be retried without losing the
+saved city. Temperature units change immediately without another network request.
+
 ## Updates
 
 Release builds check for updates roughly every six hours when connected, starting
@@ -65,11 +106,16 @@ promised to install silently.
 
 Updates come from this repository's latest GitHub release (`update.json` + APK).
 Debug builds do not check. There is no analytics or advertising SDK; update checks
-contact GitHub and its download infrastructure. App ordering stays locally on the TV.
+contact GitHub and its download infrastructure. App ordering and weather preferences stay locally on the TV.
 
 An existing 0.2.0 studio installation needs one manual update to 0.3.0 to enable this
 channel. Install over it with `adb -s <fire-tv-ip>:5555 install -r <apk>`; do not uninstall if you want to retain
 favorites. Only releases signed by the same key can update an existing install.
+
+For the Fire TV keyboard regression, open Home Preview → Settings → Choose a city,
+then run `python3 scripts/check-city-keyboard.py --serial <device-serial>`. The check
+verifies city entry opens without a system keyboard, Back returns to Settings, and
+city entry can be reopened and exited without changing saved preferences.
 
 ## Build and publish
 
@@ -78,6 +124,9 @@ Use **JDK 17** and **Android SDK 34**:
 ```sh
 ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```
+
+PR checks also save a three-day `homescreen-debug` APK artifact for device testing.
+It installs separately from the release launcher and does not check for updates.
 
 The public application ID is `nyc.arash.homescreen.studio`. Create a local, ignored
 `personal-keystore.properties` with your own keystore:

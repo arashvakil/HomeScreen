@@ -1,6 +1,5 @@
 package nyc.arash.homescreen.ui
 
-import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -27,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -38,10 +38,18 @@ import nyc.arash.homescreen.apps.TvApp
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.flow.first
+import nyc.arash.homescreen.weather.rememberWeather
+import nyc.arash.homescreen.weather.weatherDescription
+import nyc.arash.homescreen.weather.precipitationSummary
+import java.time.Instant
+import java.time.ZoneId
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: String? = null, updateInstalling: Boolean = false, onInstallUpdate: () -> Unit = {}, onLaunchApp: (TvApp) -> Unit) {
+    val weather = rememberWeather(resumeGeneration)
+    var settingsOpen by remember { mutableStateOf(false) }
+    var forecastOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
     val layout = remember { LauncherLayout(context) }
@@ -58,6 +66,18 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
     }
     val now = currentTime()
     val (time, period) = formatHM(now, hour12 = true)
+    val location = weather.settings.location
+    val reading = weather.reading?.takeIf { it.usable(location, now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) }
+    val weatherTitle = when {
+        location == null -> "Set up your local weather."
+        reading != null -> "${weather.settings.unit.format(reading.celsius)} · ${weatherDescription(reading.code)} · ${location.name}"
+        weather.failed -> "Weather unavailable · ${location.name}"
+        else -> "Loading weather · ${location.name}"
+    }
+    val weatherCredit = reading?.let {
+        val observed = Instant.ofEpochMilli(it.observedAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))
+        "${if (weather.failed) "Update unavailable · " else ""}Open-Meteo · as of $observed"
+    } ?: "Weather by Open-Meteo"
     fun save(ids: List<String>) { layout.saveFavorites(ids); favoriteIds = layout.favoriteIds() }
 
     LaunchedEffect(apps.isNotEmpty(), allApps, focusRequest, resumeGeneration) {
@@ -88,22 +108,39 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     NavChip("Home", selected = !allApps, onClick = { allApps = false })
                     NavChip("All Apps", selected = allApps, onClick = { allApps = true })
+                    NavChip(if (location == null) "Set up weather" else "Weather", onClick = { if (location == null) settingsOpen = true else forecastOpen = true })
                     if (updateVersion != null) {
                         NavChip(if (updateInstalling) "Installing…" else "Update $updateVersion", onClick = onInstallUpdate, enabled = !updateInstalling)
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("$time $period", color = Color(0xFFE9EFFA), fontSize = 16.sp, fontWeight = FontWeight.Light)
-                    SettingsButton {
-                        runCatching { context.startActivity(Intent(Intent.ACTION_MAIN).addCategory("android.intent.category.LEANBACK_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    }
+                    SettingsButton { settingsOpen = true }
                 }
             }
             Spacer(Modifier.height(26.dp))
-            Text(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())).uppercase(Locale.getDefault()), color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())).uppercase(Locale.getDefault()), color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
+                if (!allApps && location != null) SourceLink(weatherCredit, "https://open-meteo.com/")
+            }
             Spacer(Modifier.height(5.dp))
-            Text(if (allApps) "All your apps." else "Make yourself at home.", color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp)
-            Spacer(Modifier.height(22.dp))
+            if (!allApps && reading != null && location != null) {
+                Row(Modifier.fillMaxWidth().height(63.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(15.dp)) {
+                    Box(Modifier.size(52.dp).background(Color(0x0CFFFFFF), RoundedCornerShape(18.dp)), contentAlignment = Alignment.Center) {
+                        WeatherGlyph(reading.code, Modifier.size(33.dp), reading.isDay)
+                    }
+                    Text(weather.settings.unit.format(reading.celsius), color = Color.White, fontSize = 43.sp, fontWeight = FontWeight.Light, letterSpacing = (-1.8).sp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(location.name, color = Color(0xFFF0F4FA), fontSize = 17.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(weatherDescription(reading.code), color = Color(0xFF9EB3CB), fontSize = 12.sp)
+                    }
+                    WeatherOutlook(reading.precipitationSummary(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()), Modifier.width(330.dp), onClick = { forecastOpen = true })
+                }
+                Spacer(Modifier.height(8.dp))
+            } else {
+                Text(if (allApps) "All your apps." else weatherTitle, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(22.dp))
+            }
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
                 state = gridState,
@@ -149,6 +186,8 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Text("← ↑ ↓ →  Navigate     OK  Open     ☰  Arrange", color = Color(0xFF7486A3), fontSize = 10.sp)
             }
         }
+        if (forecastOpen) WeatherForecastDialog(weather, onSettings = { forecastOpen = false; settingsOpen = true }, onDismiss = { forecastOpen = false })
+        if (settingsOpen) WeatherSettingsDialog(weather, onDismiss = { settingsOpen = false })
         arranging?.let { app ->
             ArrangeDialog(app, favoriteIds, onSave = ::save, onDismiss = { arranging = null })
         }
@@ -164,20 +203,21 @@ private fun SectionHeading(title: String, hint: String) {
 }
 
 @Composable
-private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, compact: Boolean = false) {
     var focused by remember { mutableStateOf(false) }
-    val shape = RoundedCornerShape(50)
+    val shape = RoundedCornerShape(if (compact) 10.dp else 14.dp)
     Box(
         modifier
+            .navigationSound()
             .onFocusChanged { focused = it.isFocused }
             .clip(shape)
-            .background(if (focused) Color.White else if (selected) Color(0x22FFFFFF) else Color.Transparent)
-            .border(if (focused) 1.dp else 0.dp, Color(0x66FFFFFF), shape)
+            .background(if (focused) Color(0xFFF0F7FC) else if (selected) Color(0x26FFFFFF) else if (compact) Color(0x10FFFFFF) else Color(0x08FFFFFF))
+            .border(1.dp, if (focused) Color.White else Color.Transparent, shape)
             .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
-            .padding(horizontal = 19.dp, vertical = 9.dp),
+            .padding(horizontal = if (compact) 6.dp else 19.dp, vertical = if (compact) 6.dp else 9.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = if (!enabled) Color(0xFF617089) else if (focused) Color(0xFF111C2F) else Color(0xFFD7E0EF), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = if (!enabled) Color(0xFF617089) else if (focused) Color(0xFF111C2F) else Color(0xFFD7E0EF), fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -185,12 +225,13 @@ private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Uni
 private fun SettingsButton(onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Box(
-        Modifier.size(34.dp).onFocusChanged { focused = it.isFocused }.clip(RoundedCornerShape(50))
+        Modifier.size(34.dp).navigationSound()
+            .onFocusChanged { focused = it.isFocused }.clip(RoundedCornerShape(50))
             .background(if (focused) Color.White else Color(0x18FFFFFF))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Settings, "Settings", tint = if (focused) Color(0xFF122139) else Color(0xFFD6E1F4), modifier = Modifier.size(17.dp))
+        Icon(Icons.Outlined.Settings, "Home Settings", tint = if (focused) Color(0xFF122139) else Color(0xFFD6E1F4), modifier = Modifier.size(17.dp))
     }
 }
 

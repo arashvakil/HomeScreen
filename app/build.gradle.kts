@@ -22,8 +22,8 @@ android {
         applicationId = if (personalLauncher) "nyc.arash.homescreen.studio" else "nyc.arash.homescreen"
         minSdk = 22
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
         buildConfigField("boolean", "AUTO_UPDATE_ENABLED", "true")
         buildConfigField("String", "UPDATE_MANIFEST_URL", "\"$updateManifestUrl\"")
     }

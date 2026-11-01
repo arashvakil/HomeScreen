@@ -21,6 +21,7 @@ import kotlinx.coroutines.withContext
 import nyc.arash.homescreen.apps.AppRepository
 import nyc.arash.homescreen.apps.TvApp
 import nyc.arash.homescreen.ui.HomeScreen
+import nyc.arash.homescreen.ui.NavigationSoundProvider
 import nyc.arash.homescreen.ui.theme.HomeScreenTheme
 import nyc.arash.homescreen.update.UpdateScheduler
 
@@ -69,7 +70,9 @@ class MainActivity : ComponentActivity() {
         updateStore.preferences.registerOnSharedPreferenceChangeListener(updateListener)
         setContent {
             HomeScreenTheme {
-                HomeScreen(apps = apps, resumeGeneration = resumeGeneration, updateVersion = readyUpdate?.first?.versionName, updateInstalling = installingUpdate, onInstallUpdate = ::installReadyUpdate, onLaunchApp = { app -> runCatching { startActivity(app.launchIntent) } })
+                NavigationSoundProvider {
+                    HomeScreen(apps = apps, resumeGeneration = resumeGeneration, updateVersion = readyUpdate?.first?.versionName, updateInstalling = installingUpdate, onInstallUpdate = ::installReadyUpdate, onLaunchApp = { app -> runCatching { startActivity(app.launchIntent) } })
+                }
             }
         }
     }
