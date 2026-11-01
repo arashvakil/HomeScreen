@@ -34,7 +34,7 @@ Fire OS is required; Vega OS is not supported by this Android APK.
 3. Download this repository, then run:
 
    ```sh
-   ./scripts/setup.sh <fire-tv-ip>:5555 /path/to/homescreen-3.apk
+   ./scripts/setup.sh <fire-tv-ip>:5555 /path/to/homescreen-4.apk
    ```
 
 The script installs HomeScreen plus the official, checksum-pinned
