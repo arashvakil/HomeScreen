@@ -58,9 +58,9 @@ and open Home from your apps. Home-button and boot integration require the compa
 
 ## Weather and settings
 
-Open the gear in the top right for **Home Settings**. Choose **Choose a city**, enter
+Select **Set up weather** on a fresh installation, or open the gear for **Home Settings**. Choose **Choose a city**, enter
 a city or postal code with the app’s remote-friendly keyboard, select **Search**,
-then pick the matching city and region. **Delete**, **Clear**, and **Back to Settings**
+then pick the matching city and region. **Use New York** provides a one-click shortcut. **Delete**, **Clear**, and **Back to Settings**
 are explicit controls. **Back** returns directly to Settings. This screen never opens
 the Fire TV system keyboard. A connected hardware keyboard can also type/search.
 Select **Fahrenheit** or **Celsius**, then **Done**. The same screen

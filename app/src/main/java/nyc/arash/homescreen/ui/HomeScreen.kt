@@ -69,7 +69,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
     val location = weather.settings.location
     val reading = weather.reading?.takeIf { it.usable(location, now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) }
     val weatherTitle = when {
-        location == null -> "Choose a city in Settings."
+        location == null -> "Set up your local weather."
         reading != null -> "${weather.settings.unit.format(reading.celsius)} · ${weatherDescription(reading.code)} · ${location.name}"
         weather.failed -> "Weather unavailable · ${location.name}"
         else -> "Loading weather · ${location.name}"
@@ -108,7 +108,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     NavChip("Home", selected = !allApps, onClick = { allApps = false })
                     NavChip("All Apps", selected = allApps, onClick = { allApps = true })
-                    NavChip("Weather", onClick = { forecastOpen = true })
+                    NavChip(if (location == null) "Set up weather" else "Weather", onClick = { if (location == null) settingsOpen = true else forecastOpen = true })
                     if (updateVersion != null) {
                         NavChip(if (updateInstalling) "Installing…" else "Update $updateVersion", onClick = onInstallUpdate, enabled = !updateInstalling)
                     }

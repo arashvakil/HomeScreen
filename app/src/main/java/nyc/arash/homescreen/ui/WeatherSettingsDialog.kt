@@ -120,9 +120,15 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
                 },
             verticalArrangement = Arrangement.spacedBy(if (searching && editing) 7.dp else 10.dp),
         ) {
-            Text(if (searching) "Choose your city" else "Home Settings", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Medium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(if (searching) "Choose your city" else "Home Settings", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Medium)
+                if (searching) NavChip("Use New York", onClick = {
+                    weather.configure(weather.settings.copy(location = WeatherLocation("New York", "New York", "United States", 40.71427, -74.00597)))
+                    leaveSearch()
+                }, compact = true)
+            }
             if (searching) {
-                Text("Use the remote to enter a city or postal code. Back returns to Settings.", color = Color(0xFFA6B6D0), fontSize = 11.sp)
+                Text("Choose New York above, or enter a city / ZIP below. Back returns to Settings.", color = Color(0xFFA6B6D0), fontSize = 11.sp)
                 Text(query.ifEmpty { "City or postal code" }, color = if (query.isEmpty()) Color(0xFF899BB9) else Color.White, fontSize = 16.sp,
                     modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF526480), RoundedCornerShape(12.dp)).padding(10.dp))
                 if (editing) {
