@@ -26,7 +26,6 @@ internal class WeatherStore(context: Context) {
 
     fun cached(): WeatherReading? = runCatching {
         val json = JSONObject(preferences.getString("reading", "").orEmpty())
-        check(json.getInt("schema") == 2)
         val hours = json.getJSONArray("hourly")
         val days = json.getJSONArray("daily")
         WeatherReading(json.getString("locationKey"), json.getDouble("celsius"), json.getInt("code"), json.getLong("observedAt"), json.getLong("fetchedAt"),

@@ -41,7 +41,7 @@ internal fun rememberWeather(resumeGeneration: Int): WeatherState {
             while (true) {
                 val now = System.currentTimeMillis()
                 val cached = state.reading
-                val fresh = cached?.let { it.usable(location, now) && it.fresh(now) } == true
+                val fresh = cached?.let { it.usable(location, now) && it.fresh(now) && it.isDay != null && it.hourly.all { hour -> hour.isDay != null } } == true
                 val recentlyAttempted = state.lastAttemptKey == location.key && now - state.lastAttemptAt in 0L until 60_000L
                 if (!fresh && !recentlyAttempted) {
                     state.lastAttemptKey = location.key
