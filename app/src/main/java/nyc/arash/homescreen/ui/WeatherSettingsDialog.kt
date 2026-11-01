@@ -12,6 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -30,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import nyc.arash.homescreen.weather.*
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -76,20 +80,22 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
         }
     }
 
-    LaunchedEffect(searching) {
-        if (!searching) {
-            withFrameNanos { }
-            first.requestFocus()
-        }
-    }
-    LaunchedEffect(results) {
-        if (results.isNotEmpty()) {
-            withFrameNanos { }
-            firstResult.requestFocus()
-        }
-    }
-
     Dialog(onDismissRequest = { if (searching) leaveSearch() else onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        val inputMode = LocalInputModeManager.current
+        LaunchedEffect(searching) {
+            if (!searching) {
+                withFrameNanos { }
+                inputMode.requestInputMode(InputMode.Keyboard)
+                first.requestFocus()
+            }
+        }
+        LaunchedEffect(results) {
+            if (results.isNotEmpty()) {
+                withFrameNanos { }
+                inputMode.requestInputMode(InputMode.Keyboard)
+                firstResult.requestFocus()
+            }
+        }
         Column(
             Modifier.width(620.dp).heightIn(max = 470.dp).clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFF111D32)).border(.5.dp, Color(0x33FFFFFF), RoundedCornerShape(24.dp))

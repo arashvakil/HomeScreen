@@ -11,9 +11,15 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.viewinterop.AndroidView
 
 /** Fire TV's IME needs native editor actions and pre-IME Back handling. */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun CitySearchField(
     query: String,
@@ -23,8 +29,9 @@ internal fun CitySearchField(
     onFocused: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val inputMode = LocalInputModeManager.current
     AndroidView(
-        modifier = modifier,
+        modifier = modifier.semantics { contentDescription = "City or postal code" },
         factory = { context ->
             CitySearchEditText(context).apply {
                 setText(query)
@@ -39,8 +46,8 @@ internal fun CitySearchField(
         },
         onRelease = { it.finishEditing() },
         update = { editor ->
-            editor.onDismissKeyboard = onKeyboardDismiss
-            editor.onSubmit = onSearch
+            editor.onDismissKeyboard = { inputMode.requestInputMode(InputMode.Keyboard); onKeyboardDismiss() }
+            editor.onSubmit = { inputMode.requestInputMode(InputMode.Keyboard); onSearch() }
             editor.onFocusChangeListener = android.view.View.OnFocusChangeListener { _, focused ->
                 onFocused(focused)
                 if (!focused) editor.hideKeyboard()
@@ -61,7 +68,7 @@ private class CitySearchEditText(context: Context) : EditText(context) {
     init {
         setSingleLine(true)
         inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-        imeOptions = EditorInfo.IME_ACTION_SEARCH or EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_FULLSCREEN
+        imeOptions = EditorInfo.IME_ACTION_SEARCH
         // Focus restoration must never reopen a keyboard the user just dismissed.
         showSoftInputOnFocus = false
         filters = arrayOf(InputFilter.LengthFilter(100))
