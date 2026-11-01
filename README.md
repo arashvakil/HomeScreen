@@ -112,6 +112,11 @@ An existing 0.2.0 studio installation needs one manual update to 0.3.0 to enable
 channel. Install over it with `adb -s <fire-tv-ip>:5555 install -r <apk>`; do not uninstall if you want to retain
 favorites. Only releases signed by the same key can update an existing install.
 
+For the Fire TV keyboard regression, open Home Preview → Settings → Choose a city,
+then run `python3 scripts/check-city-keyboard.py --serial <device-serial>`. The check
+verifies Back dismissal, no automatic reopening, explicit reopening, and return to
+Settings without changing saved preferences.
+
 ## Build and publish
 
 Use **JDK 17** and **Android SDK 34**:
