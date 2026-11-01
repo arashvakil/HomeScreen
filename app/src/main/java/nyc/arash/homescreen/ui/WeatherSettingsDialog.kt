@@ -9,9 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,13 +17,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -41,7 +33,6 @@ import nyc.arash.homescreen.weather.*
 @Composable
 internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val keyboard = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
     var searching by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
@@ -58,7 +49,6 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
         searchJob?.cancel()
         busy = false
         searching = false
-        keyboard?.hide()
     }
 
     fun search() {
@@ -67,7 +57,6 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
             message = "Enter at least two characters to search."
             return
         }
-        keyboard?.hide()
         searchButton.requestFocus()
         busy = true
         results = emptyList()
@@ -88,8 +77,10 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
     }
 
     LaunchedEffect(searching) {
-        withFrameNanos { }
-        first.requestFocus()
+        if (!searching) {
+            withFrameNanos { }
+            first.requestFocus()
+        }
     }
     LaunchedEffect(results) {
         if (results.isNotEmpty()) {
@@ -108,26 +99,14 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
             Text(if (searching) "Choose your city" else "Home Settings", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Medium)
             if (searching) {
                 Text("Search by city or postal code, then choose a match.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
-                BasicTextField(
-                    value = query,
-                    onValueChange = { if (!busy) { query = it.take(100); results = emptyList(); message = null } },
-                    singleLine = true,
-                    textStyle = TextStyle(color = Color.White, fontSize = 16.sp),
-                    cursorBrush = SolidColor(Color.White),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { search() }),
-                    modifier = Modifier.fillMaxWidth().focusRequester(first).navigationSound()
-                        .onFocusChanged { fieldFocused = it.isFocused }
-                        .onPreviewKeyEvent {
-                            if (it.key == Key.DirectionDown && it.type == KeyEventType.KeyDown) {
-                                keyboard?.hide(); searchButton.requestFocus(); true
-                            } else false
-                        }
-                        .border(if (fieldFocused) 2.dp else 1.dp, if (fieldFocused) Color.White else Color(0xFF526480), RoundedCornerShape(12.dp))
-                        .padding(14.dp),
-                    decorationBox = { field ->
-                        Box { if (query.isEmpty()) Text("City or postal code", color = Color(0xFF899BB9), fontSize = 16.sp); field() }
-                    },
+                CitySearchField(
+                    query = query,
+                    onQueryChange = { query = it; results = emptyList(); message = null },
+                    onSearch = ::search,
+                    onKeyboardDismiss = { searchButton.requestFocus() },
+                    onFocused = { fieldFocused = it },
+                    modifier = Modifier.fillMaxWidth().navigationSound()
+                        .border(if (fieldFocused) 2.dp else 1.dp, if (fieldFocused) Color.White else Color(0xFF526480), RoundedCornerShape(12.dp)),
                 )
                 NavChip(if (busy) "Searching…" else "Search", onClick = ::search, modifier = Modifier.fillMaxWidth().focusRequester(searchButton))
                 message?.let { Text(it, color = Color(0xFFA6B6D0), fontSize = 12.sp) }

@@ -60,7 +60,10 @@ and open Home from your apps. Home-button and boot integration require the compa
 
 Open the gear in the top right for **Home Settings**. Choose **Choose a city**, enter
 a city or postal code with the TV keyboard, select **Search**, then pick the matching
-city and region. Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
+city and region. The native city editor has an explicit Search action. **Back**
+closes the keyboard and moves focus to Search; another Back returns to Settings.
+Dismissed keyboards stay closed until you select the editor again.
+Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
 keeps a **Fire TV Settings** shortcut. Back from city search returns to Home Settings.
 
 The home header summarizes the next possible or expected precipitation. Open
