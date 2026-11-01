@@ -15,7 +15,7 @@ autoplay previews, or promoted content in the launcher.
 - A clean six-column app grid, Home and All Apps views, clock, and Settings shortcut.
 - Favorites you can reorder and save. Highlight an app and press **Menu** or hold **OK**.
 - Stable focus borders with no pulsing or zoom animation.
-- A random funny or encouraging greeting each time you return home.
+- Current weather for a city you choose, with saved Fahrenheit or Celsius units.
 - A soft beep when D-pad navigation moves focus, using the TV’s system sound volume.
 - Home button redirection and launch on boot through the companion **Home on Fire**.
 - Built-in update checks: signed release APKs, SHA-256 verification, and Android's install flow.
@@ -56,6 +56,28 @@ accessibility service or uninstall the companion.
 You can also install just the launcher with `adb -s <fire-tv-ip>:5555 install -r <apk>`
 and open Home from your apps. Home-button and boot integration require the companion.
 
+## Weather and settings
+
+Open the gear in the top right for **Home Settings**. Choose **Choose a city**, enter
+a city or postal code with the TV keyboard, select **Search**, then pick the matching
+city and region. Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
+keeps a **Fire TV Settings** shortcut. Back from city search returns to Home Settings.
+
+No city is assumed on first launch. Weather uses the free non-commercial
+[Open-Meteo API](https://open-meteo.com/en/docs); city search uses its
+[GeoNames-backed geocoding API](https://open-meteo.com/en/docs/geocoding-api).
+The chosen city/search term and city coordinates are sent to those services; the
+launcher does not request GPS, infer an IP location, or add an account or API key.
+Weather data is attributed to Open-Meteo under CC BY 4.0. Commercial distributions
+must arrange an appropriate provider plan before using the free endpoint.
+
+Current conditions refresh about every 15 minutes while the launcher is visible.
+Returning home reuses a fresh cached reading instead of making another request.
+A failed update keeps a recent reading with an explicit notice and its observation
+time; readings over two hours old are hidden. Without a cached reading, connection
+failures show weather unavailable. Search errors can be retried without losing the
+saved city. Temperature units change immediately without another network request.
+
 ## Updates
 
 Release builds check for updates roughly every six hours when connected, starting
@@ -67,7 +89,7 @@ promised to install silently.
 
 Updates come from this repository's latest GitHub release (`update.json` + APK).
 Debug builds do not check. There is no analytics or advertising SDK; update checks
-contact GitHub and its download infrastructure. App ordering stays locally on the TV.
+contact GitHub and its download infrastructure. App ordering and weather preferences stay locally on the TV.
 
 An existing 0.2.0 studio installation needs one manual update to 0.3.0 to enable this
 channel. Install over it with `adb -s <fire-tv-ip>:5555 install -r <apk>`; do not uninstall if you want to retain

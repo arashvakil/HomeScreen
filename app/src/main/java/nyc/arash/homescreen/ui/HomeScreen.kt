@@ -1,6 +1,5 @@
 package nyc.arash.homescreen.ui
 
-import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -39,12 +38,16 @@ import nyc.arash.homescreen.apps.TvApp
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.flow.first
+import nyc.arash.homescreen.weather.rememberWeather
+import nyc.arash.homescreen.weather.weatherDescription
+import java.time.Instant
+import java.time.ZoneId
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: String? = null, updateInstalling: Boolean = false, onInstallUpdate: () -> Unit = {}, onLaunchApp: (TvApp) -> Unit) {
-    val quotes = remember { WelcomeQuotes() }
-    val welcomeQuote = remember(resumeGeneration) { quotes.next() }
+    val weather = rememberWeather(resumeGeneration)
+    var settingsOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
     val layout = remember { LauncherLayout(context) }
@@ -61,6 +64,18 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
     }
     val now = currentTime()
     val (time, period) = formatHM(now, hour12 = true)
+    val location = weather.settings.location
+    val reading = weather.reading?.takeIf { it.usable(location, now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) }
+    val weatherTitle = when {
+        location == null -> "Choose a city in Settings."
+        reading != null -> "${weather.settings.unit.format(reading.celsius)} · ${weatherDescription(reading.code)} · ${location.name}"
+        weather.failed -> "Weather unavailable · ${location.name}"
+        else -> "Loading weather · ${location.name}"
+    }
+    val weatherCredit = reading?.let {
+        val observed = Instant.ofEpochMilli(it.observedAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))
+        "${if (weather.failed) "Update unavailable · " else ""}Open-Meteo · as of $observed"
+    } ?: "Weather by Open-Meteo"
     fun save(ids: List<String>) { layout.saveFavorites(ids); favoriteIds = layout.favoriteIds() }
 
     LaunchedEffect(apps.isNotEmpty(), allApps, focusRequest, resumeGeneration) {
@@ -97,15 +112,16 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                     Text("$time $period", color = Color(0xFFE9EFFA), fontSize = 16.sp, fontWeight = FontWeight.Light)
-                    SettingsButton {
-                        runCatching { context.startActivity(Intent(Intent.ACTION_MAIN).addCategory("android.intent.category.LEANBACK_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-                    }
+                    SettingsButton { settingsOpen = true }
                 }
             }
             Spacer(Modifier.height(26.dp))
-            Text(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())).uppercase(Locale.getDefault()), color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())).uppercase(Locale.getDefault()), color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
+                if (!allApps && location != null) SourceLink(weatherCredit, "https://open-meteo.com/")
+            }
             Spacer(Modifier.height(5.dp))
-            Text(if (allApps) "All your apps." else welcomeQuote, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(if (allApps) "All your apps." else weatherTitle, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(22.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
@@ -152,6 +168,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Text("← ↑ ↓ →  Navigate     OK  Open     ☰  Arrange", color = Color(0xFF7486A3), fontSize = 10.sp)
             }
         }
+        if (settingsOpen) WeatherSettingsDialog(weather, onDismiss = { settingsOpen = false })
         arranging?.let { app ->
             ArrangeDialog(app, favoriteIds, onSave = ::save, onDismiss = { arranging = null })
         }
@@ -167,7 +184,7 @@ private fun SectionHeading(title: String, hint: String) {
 }
 
 @Composable
-private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(50)
     Box(
@@ -181,7 +198,7 @@ private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Uni
             .padding(horizontal = 19.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, color = if (!enabled) Color(0xFF617089) else if (focused) Color(0xFF111C2F) else Color(0xFFD7E0EF), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = if (!enabled) Color(0xFF617089) else if (focused) Color(0xFF111C2F) else Color(0xFFD7E0EF), fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -195,7 +212,7 @@ private fun SettingsButton(onClick: () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Outlined.Settings, "Settings", tint = if (focused) Color(0xFF122139) else Color(0xFFD6E1F4), modifier = Modifier.size(17.dp))
+        Icon(Icons.Outlined.Settings, "Home Settings", tint = if (focused) Color(0xFF122139) else Color(0xFFD6E1F4), modifier = Modifier.size(17.dp))
     }
 }
 
