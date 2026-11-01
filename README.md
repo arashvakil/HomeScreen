@@ -63,6 +63,19 @@ a city or postal code with the TV keyboard, select **Search**, then pick the mat
 city and region. Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
 keeps a **Fire TV Settings** shortcut. Back from city search returns to Home Settings.
 
+The home header summarizes the next possible or expected precipitation. Open
+**Weather** for the next 24 hours and a seven-day outlook, including precipitation
+chance, total liquid-equivalent precipitation, and snowfall. Move focus across hour
+cards and down daily cards with the remote to scroll. Forecast times follow the
+selected city’s timezone. Fahrenheit uses inches for precipitation; Celsius uses
+millimeters for total precipitation and centimeters for snow.
+
+“Possible” means at least a 40% hourly chance; “expected” means forecast hourly
+precipitation of at least 0.1 mm or snow of at least 0.1 cm. The next-event summary
+includes rain, snow, freezing precipitation, and thunderstorms. A dry summary only
+covers the available forecast window with complete precipitation data. These are
+forecast estimates and can change.
+
 No city is assumed on first launch. Weather uses the free non-commercial
 [Open-Meteo API](https://open-meteo.com/en/docs); city search uses its
 [GeoNames-backed geocoding API](https://open-meteo.com/en/docs/geocoding-api).

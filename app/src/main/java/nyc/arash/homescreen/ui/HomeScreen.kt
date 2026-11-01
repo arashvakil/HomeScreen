@@ -40,6 +40,7 @@ import java.util.Locale
 import kotlinx.coroutines.flow.first
 import nyc.arash.homescreen.weather.rememberWeather
 import nyc.arash.homescreen.weather.weatherDescription
+import nyc.arash.homescreen.weather.precipitationSummary
 import java.time.Instant
 import java.time.ZoneId
 
@@ -48,6 +49,7 @@ import java.time.ZoneId
 fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: String? = null, updateInstalling: Boolean = false, onInstallUpdate: () -> Unit = {}, onLaunchApp: (TvApp) -> Unit) {
     val weather = rememberWeather(resumeGeneration)
     var settingsOpen by remember { mutableStateOf(false) }
+    var forecastOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
     val layout = remember { LauncherLayout(context) }
@@ -106,6 +108,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     NavChip("Home", selected = !allApps, onClick = { allApps = false })
                     NavChip("All Apps", selected = allApps, onClick = { allApps = true })
+                    NavChip("Weather", onClick = { forecastOpen = true })
                     if (updateVersion != null) {
                         NavChip(if (updateInstalling) "Installing…" else "Update $updateVersion", onClick = onInstallUpdate, enabled = !updateInstalling)
                     }
@@ -122,7 +125,11 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
             }
             Spacer(Modifier.height(5.dp))
             Text(if (allApps) "All your apps." else weatherTitle, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(22.dp))
+            if (!allApps && reading != null) {
+                Spacer(Modifier.height(3.dp))
+                Text(reading.precipitationSummary(now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()), color = Color(0xFFB5C8E4), fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(5.dp))
+            } else Spacer(Modifier.height(22.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
                 state = gridState,
@@ -168,6 +175,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
                 Text("← ↑ ↓ →  Navigate     OK  Open     ☰  Arrange", color = Color(0xFF7486A3), fontSize = 10.sp)
             }
         }
+        if (forecastOpen) WeatherForecastDialog(weather, onSettings = { forecastOpen = false; settingsOpen = true }, onDismiss = { forecastOpen = false })
         if (settingsOpen) WeatherSettingsDialog(weather, onDismiss = { settingsOpen = false })
         arranging?.let { app ->
             ArrangeDialog(app, favoriteIds, onSave = ::save, onDismiss = { arranging = null })

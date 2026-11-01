@@ -32,14 +32,34 @@ internal class WeatherRepository {
             .addQueryParameter("latitude", location.latitude.toString())
             .addQueryParameter("longitude", location.longitude.toString())
             .addQueryParameter("current", "temperature_2m,weather_code")
+            .addQueryParameter("hourly", "temperature_2m,precipitation_probability,precipitation,snowfall,weather_code")
+            .addQueryParameter("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,snowfall_sum")
+            .addQueryParameter("forecast_days", "7").addQueryParameter("timezone", "auto")
             .addQueryParameter("temperature_unit", "celsius").addQueryParameter("timeformat", "unixtime").build()
         val json = request(url)
         check(json.getJSONObject("current_units").getString("temperature_2m") == "°C")
         val current = json.getJSONObject("current")
         val now = System.currentTimeMillis()
-        return WeatherReading(location.key, current.getDouble("temperature_2m"), current.getInt("weather_code"), current.getLong("time") * 1000, now)
+        val hourly = json.getJSONObject("hourly")
+        val daily = json.getJSONObject("daily")
+        val hours = (0 until hourly.getJSONArray("time").length()).map { index ->
+            HourlyForecast(hourly.getJSONArray("time").getLong(index) * 1000, hourly.number("temperature_2m", index),
+                hourly.number("precipitation_probability", index)?.toInt()?.takeIf { it in 0..100 },
+                hourly.number("precipitation", index)?.takeIf { it >= 0 }, hourly.number("snowfall", index)?.takeIf { it >= 0 },
+                hourly.number("weather_code", index)?.toInt())
+        }
+        val days = (0 until daily.getJSONArray("time").length()).map { index ->
+            DailyForecast(daily.getJSONArray("time").getLong(index) * 1000, daily.number("temperature_2m_min", index), daily.number("temperature_2m_max", index),
+                daily.number("precipitation_probability_max", index)?.toInt()?.takeIf { it in 0..100 },
+                daily.number("precipitation_sum", index)?.takeIf { it >= 0 }, daily.number("snowfall_sum", index)?.takeIf { it >= 0 },
+                daily.number("weather_code", index)?.toInt())
+        }
+        return WeatherReading(location.key, current.getDouble("temperature_2m"), current.getInt("weather_code"), current.getLong("time") * 1000, now,
+            json.getString("timezone"), hours, days)
             .also { check(it.usable(location, now)) { "Weather is out of date" } }
     }
+
+    private fun JSONObject.number(key: String, index: Int): Double? = optJSONArray(key)?.optDouble(index)?.takeIf { it.isFinite() }
 
     private fun request(url: HttpUrl): JSONObject {
         http.newCall(Request.Builder().url(url).build()).execute().use { response ->

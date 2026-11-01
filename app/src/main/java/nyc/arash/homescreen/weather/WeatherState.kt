@@ -38,26 +38,26 @@ internal fun rememberWeather(resumeGeneration: Int): WeatherState {
     LaunchedEffect(state.settings.location, resumeGeneration, lifecycle) {
         val location = state.settings.location ?: return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-        while (true) {
-            val now = System.currentTimeMillis()
-            val cached = state.reading
-            val fresh = cached?.let { it.usable(location, now) && it.fresh(now) } == true
-            val recentlyAttempted = state.lastAttemptKey == location.key && now - state.lastAttemptAt in 0L until 60_000L
-            if (!fresh && !recentlyAttempted) {
-                state.lastAttemptKey = location.key
-                state.lastAttemptAt = now
-                state.failed = false
-                try {
-                    val reading = withContext(Dispatchers.IO) { state.repository.current(location) }
-                    state.received(reading)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    state.failed = true
+            while (true) {
+                val now = System.currentTimeMillis()
+                val cached = state.reading
+                val fresh = cached?.let { it.usable(location, now) && it.fresh(now) } == true
+                val recentlyAttempted = state.lastAttemptKey == location.key && now - state.lastAttemptAt in 0L until 60_000L
+                if (!fresh && !recentlyAttempted) {
+                    state.lastAttemptKey = location.key
+                    state.lastAttemptAt = now
+                    state.failed = false
+                    try {
+                        val reading = withContext(Dispatchers.IO) { state.repository.current(location) }
+                        state.received(reading)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        state.failed = true
+                    }
                 }
+                delay(60_000L)
             }
-            delay(60_000L)
-        }
         }
     }
     return state
