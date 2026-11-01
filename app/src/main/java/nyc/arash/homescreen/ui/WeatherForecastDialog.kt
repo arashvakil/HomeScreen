@@ -58,9 +58,9 @@ internal fun WeatherForecastDialog(weather: WeatherState, onSettings: () -> Unit
                 Text("${if (weather.failed) "Update unavailable · " else ""}As of ${date(reading.observedAt, "EEE h:mm a")} · Times local to this city", color = Color(0xFF899BB9), fontSize = 11.sp)
                 Text("NEXT 24 HOURS", color = Color(0xFF9CACCA), fontSize = 11.sp, letterSpacing = 1.5.sp)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(2.dp)) {
-                    items(reading.hourly.filter { it.time + 3_600_000L > now }.take(24), key = { it.time }) { hour ->
+                    items(reading.hourly.filter { it.time > now }.take(24), key = { it.time }) { hour ->
                         ForecastCard(Modifier.width(104.dp)) {
-                            Text(if (hour.time <= now) "Now" else date(hour.time, "EEE h a"), color = Color(0xFFA6B6D0), fontSize = 11.sp)
+                            Text(date(hour.time, "EEE h a"), color = Color(0xFFA6B6D0), fontSize = 11.sp)
                             Text(hour.celsius?.let { unit.format(it) } ?: "—", color = Color.White, fontSize = 20.sp)
                             Text(weatherDescription(hour.code ?: -1), color = Color(0xFFA6B6D0), fontSize = 10.sp, maxLines = 2, modifier = Modifier.height(30.dp))
                             Text(hour.probability?.let { "$it% precip." } ?: "Chance unknown", color = Color(0xFFD3E3FF), fontSize = 10.sp)
@@ -78,7 +78,7 @@ internal fun WeatherForecastDialog(weather: WeatherState, onSettings: () -> Unit
                         Text("${weatherDescription(day.code ?: -1)} · ${day.probability?.let { "$it% chance" } ?: "Chance unknown"} · ${unit.precipitation(day.precipitationMm)} total${if ((day.snowCm ?: 0.0) > 0) " · Snow ${unit.snow(day.snowCm)}" else ""}", color = Color(0xFFA6B6D0), fontSize = 11.sp)
                     }
                 }
-                Text("Possible: at least 40% chance. Expected: forecast measurable rain or snow. Forecasts can change; daily totals include all precipitation.", color = Color(0xFF899BB9), fontSize = 10.sp)
+                Text("Possible: at least 40% chance. Expected: forecast measurable rain or snow. Hourly amounts/chances cover the hour ending at the shown time. Forecasts can change; daily totals include all precipitation.", color = Color(0xFF899BB9), fontSize = 10.sp)
             }
             SourceLink("Weather by Open-Meteo (CC BY 4.0)", "https://open-meteo.com/")
         }

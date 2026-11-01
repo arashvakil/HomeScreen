@@ -52,7 +52,7 @@ class WeatherModelsTest {
     }
 
     @Test fun `next precipitation distinguishes a chance from measurable snowfall`() {
-        val hour = HourlyForecast(now - 1000, 2.0, 45, 0.0, 0.0, 61)
+        val hour = HourlyForecast(now + 3_599_000, 2.0, 45, 0.0, 0.0, 61)
         val possible = reading.copy(hourly = listOf(hour)).precipitationOutlook(now)
         assertEquals(hour, possible.hour)
         assertFalse(possible.expected)
@@ -64,7 +64,7 @@ class WeatherModelsTest {
     }
 
     @Test fun `missing hourly data never becomes a confident dry forecast`() {
-        val hour = HourlyForecast(now - 1000, 2.0, 0, 0.0, 0.0, 0)
+        val hour = HourlyForecast(now + 3_599_000, 2.0, 0, 0.0, 0.0, 0)
         assertNotNull(reading.copy(hourly = listOf(hour)).precipitationOutlook(now).dryThrough)
         assertNull(reading.copy(hourly = listOf(hour.copy(probability = null))).precipitationOutlook(now).dryThrough)
         assertNull(reading.copy(hourly = emptyList()).precipitationOutlook(now).dryThrough)
@@ -72,9 +72,9 @@ class WeatherModelsTest {
     }
 
     @Test fun `summary uses city timezone and omits past events`() {
-        val event = HourlyForecast(now - 1000, 2.0, 80, 0.5, 0.0, 61)
+        val event = HourlyForecast(now + 3_599_000, 2.0, 80, 0.5, 0.0, 61)
         val value = reading.copy(timezone = "America/New_York", hourly = listOf(event))
-        assertTrue(value.precipitationSummary(now).contains("Rain expected now"))
+        assertTrue(value.precipitationSummary(now).contains("Rain expected within the hour"))
         assertNull(value.precipitationOutlook(now + 3_600_000).hour)
         assertEquals("1.00 in", TemperatureUnit.FAHRENHEIT.precipitation(25.4))
         assertEquals("1.0 in", TemperatureUnit.FAHRENHEIT.snow(2.54))

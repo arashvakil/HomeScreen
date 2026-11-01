@@ -67,7 +67,8 @@ The home header summarizes the next possible or expected precipitation. Open
 **Weather** for the next 24 hours and a seven-day outlook, including precipitation
 chance, total liquid-equivalent precipitation, and snowfall. Move focus across hour
 cards and down daily cards with the remote to scroll. Forecast times follow the
-selected city’s timezone. Fahrenheit uses inches for precipitation; Celsius uses
+selected city’s timezone. Hourly amounts and chances cover the hour ending at the
+shown time; the next-event summary uses the start of that interval. Fahrenheit uses inches for precipitation; Celsius uses
 millimeters for total precipitation and centimeters for snow.
 
 “Possible” means at least a 40% hourly chance; “expected” means forecast hourly

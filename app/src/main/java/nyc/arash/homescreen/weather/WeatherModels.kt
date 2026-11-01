@@ -70,15 +70,15 @@ internal data class DailyForecast(
 internal data class PrecipitationOutlook(val hour: HourlyForecast? = null, val expected: Boolean = false, val dryThrough: Long? = null)
 
 internal fun WeatherReading.precipitationOutlook(now: Long): PrecipitationOutlook {
-    val upcoming = hourly.filter { it.time + 3_600_000L > now && it.time < now + 7 * 86_400_000L }.sortedBy { it.time }
+    val upcoming = hourly.filter { it.time > now && it.time < now + 7 * 86_400_000L }.sortedBy { it.time }
     for (hour in upcoming) {
         val expected = (hour.precipitationMm ?: 0.0) >= 0.1 || (hour.snowCm ?: 0.0) >= 0.1
         if (expected || (hour.probability ?: 0) >= 40) return PrecipitationOutlook(hour, expected)
     }
-    val complete = upcoming.isNotEmpty() && upcoming.first().time <= now && upcoming.all {
+    val complete = upcoming.isNotEmpty() && upcoming.first().time - 3_600_000L <= now && upcoming.all {
         it.precipitationMm != null && it.probability != null && it.snowCm != null
     } && upcoming.zipWithNext().all { (a, b) -> b.time - a.time == 3_600_000L }
-    return PrecipitationOutlook(dryThrough = if (complete) upcoming.last().time + 3_600_000L else null)
+    return PrecipitationOutlook(dryThrough = if (complete) upcoming.last().time else null)
 }
 
 internal fun precipitationKind(hour: HourlyForecast): String = when {
@@ -94,15 +94,17 @@ internal fun WeatherReading.precipitationSummary(now: Long): String {
     val zone = ZoneId.of(timezone)
     val hour = outlook.hour
     if (hour != null) {
-        val date = Instant.ofEpochMilli(hour.time).atZone(zone)
+        // Open-Meteo precipitation amounts/probabilities cover the preceding hour.
+        val startsAt = hour.time - 3_600_000L
+        val date = Instant.ofEpochMilli(startsAt).atZone(zone)
         val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
-        val whenText = if (hour.time <= now) "now" else {
+        val whenText = if (startsAt <= now) "within the hour" else {
             val day = when (date.toLocalDate()) {
                 today -> "today"
                 today.plusDays(1) -> "tomorrow"
                 else -> date.format(DateTimeFormatter.ofPattern("EEE", Locale.getDefault()))
             }
-            "$day at ${date.format(DateTimeFormatter.ofPattern("h a", Locale.getDefault()))}"
+            "$day around ${date.format(DateTimeFormatter.ofPattern("h a", Locale.getDefault()))}"
         }
         val chance = hour.probability?.let { " · $it% chance" }.orEmpty()
         return "${precipitationKind(hour)} ${if (outlook.expected) "expected" else "possible"} $whenText$chance"
