@@ -49,6 +49,7 @@ fun AppTile(
     }
     Column(
         modifier
+            .navigationSound()
             .onFocusChanged { focused = it.isFocused }
             .onPreviewKeyEvent {
                 if (it.nativeKeyEvent.keyCode == AndroidKeyEvent.KEYCODE_MENU) {

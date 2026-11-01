@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -42,6 +43,8 @@ import kotlinx.coroutines.flow.first
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: String? = null, updateInstalling: Boolean = false, onInstallUpdate: () -> Unit = {}, onLaunchApp: (TvApp) -> Unit) {
+    val quotes = remember { WelcomeQuotes() }
+    val welcomeQuote = remember(resumeGeneration) { quotes.next() }
     val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
     val layout = remember { LauncherLayout(context) }
@@ -102,7 +105,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
             Spacer(Modifier.height(26.dp))
             Text(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())).uppercase(Locale.getDefault()), color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
             Spacer(Modifier.height(5.dp))
-            Text(if (allApps) "All your apps." else "Make yourself at home.", color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp)
+            Text(if (allApps) "All your apps." else welcomeQuote, color = Color.White, fontSize = 31.sp, fontWeight = FontWeight.Light, letterSpacing = (-.7).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(22.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
@@ -169,6 +172,7 @@ private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Uni
     val shape = RoundedCornerShape(50)
     Box(
         modifier
+            .navigationSound()
             .onFocusChanged { focused = it.isFocused }
             .clip(shape)
             .background(if (focused) Color.White else if (selected) Color(0x22FFFFFF) else Color.Transparent)
@@ -185,7 +189,8 @@ private fun NavChip(label: String, selected: Boolean = false, onClick: () -> Uni
 private fun SettingsButton(onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
     Box(
-        Modifier.size(34.dp).onFocusChanged { focused = it.isFocused }.clip(RoundedCornerShape(50))
+        Modifier.size(34.dp).navigationSound()
+            .onFocusChanged { focused = it.isFocused }.clip(RoundedCornerShape(50))
             .background(if (focused) Color.White else Color(0x18FFFFFF))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,

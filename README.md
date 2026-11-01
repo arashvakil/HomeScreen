@@ -15,6 +15,8 @@ autoplay previews, or promoted content in the launcher.
 - A clean six-column app grid, Home and All Apps views, clock, and Settings shortcut.
 - Favorites you can reorder and save. Highlight an app and press **Menu** or hold **OK**.
 - Stable focus borders with no pulsing or zoom animation.
+- A random funny or encouraging greeting each time you return home.
+- A soft beep when D-pad navigation moves focus, using the TV’s system sound volume.
 - Home button redirection and launch on boot through the companion **Home on Fire**.
 - Built-in update checks: signed release APKs, SHA-256 verification, and Android's install flow.
 
@@ -78,6 +80,9 @@ Use **JDK 17** and **Android SDK 34**:
 ```sh
 ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```
+
+PR checks also save a three-day `homescreen-debug` APK artifact for device testing.
+It installs separately from the release launcher and does not check for updates.
 
 The public application ID is `nyc.arash.homescreen.studio`. Create a local, ignored
 `personal-keystore.properties` with your own keystore:
