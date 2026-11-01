@@ -192,7 +192,7 @@ private fun SectionHeading(title: String, hint: String) {
 }
 
 @Composable
-internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, compact: Boolean = false) {
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(50)
     Box(
@@ -203,7 +203,7 @@ internal fun NavChip(label: String, selected: Boolean = false, onClick: () -> Un
             .background(if (focused) Color.White else if (selected) Color(0x22FFFFFF) else Color.Transparent)
             .border(if (focused) 1.dp else 0.dp, Color(0x66FFFFFF), shape)
             .clickable(enabled = enabled, interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
-            .padding(horizontal = 19.dp, vertical = 9.dp),
+            .padding(horizontal = if (compact) 6.dp else 19.dp, vertical = if (compact) 6.dp else 9.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(label, color = if (!enabled) Color(0xFF617089) else if (focused) Color(0xFF111C2F) else Color(0xFFD7E0EF), fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)

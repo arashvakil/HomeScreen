@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.*
+import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -46,7 +48,9 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
     val first = remember { FocusRequester() }
     val searchButton = remember { FocusRequester() }
     val firstResult = remember { FocusRequester() }
-    var fieldFocused by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(true) }
+    val firstKey = remember { FocusRequester() }
+    val editButton = remember { FocusRequester() }
     var searchJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
     fun leaveSearch() {
@@ -61,7 +65,7 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
             message = "Enter at least two characters to search."
             return
         }
-        searchButton.requestFocus()
+        editing = false
         busy = true
         results = emptyList()
         message = null
@@ -82,11 +86,13 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
 
     Dialog(onDismissRequest = { if (searching) leaveSearch() else onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         val inputMode = LocalInputModeManager.current
-        LaunchedEffect(searching) {
-            if (!searching) {
-                withFrameNanos { }
-                inputMode.requestInputMode(InputMode.Keyboard)
-                first.requestFocus()
+        LaunchedEffect(searching, editing) {
+            withFrameNanos { }
+            inputMode.requestInputMode(InputMode.Keyboard)
+            when {
+                !searching -> first.requestFocus()
+                editing -> firstKey.requestFocus()
+                else -> editButton.requestFocus()
             }
         }
         LaunchedEffect(results) {
@@ -99,22 +105,34 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
         Column(
             Modifier.width(620.dp).heightIn(max = 470.dp).clip(RoundedCornerShape(24.dp))
                 .background(Color(0xFF111D32)).border(.5.dp, Color(0x33FFFFFF), RoundedCornerShape(24.dp))
-                .verticalScroll(rememberScrollState()).padding(26.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .verticalScroll(rememberScrollState()).padding(26.dp)
+                .onPreviewKeyEvent { event ->
+                    if (!searching || !editing || event.type != KeyEventType.KeyDown) false else when (event.nativeKeyEvent.keyCode) {
+                        AndroidKeyEvent.KEYCODE_DEL -> { query = CityQuery.delete(query); true }
+                        AndroidKeyEvent.KEYCODE_ENTER -> { search(); true }
+                        else -> {
+                            val character = event.nativeKeyEvent.unicodeChar
+                            if (character >= 32 && Character.isValidCodePoint(character)) {
+                                query = CityQuery.append(query, String(Character.toChars(character))); true
+                            } else false
+                        }
+                    }
+                },
+            verticalArrangement = Arrangement.spacedBy(if (searching && editing) 7.dp else 10.dp),
         ) {
             Text(if (searching) "Choose your city" else "Home Settings", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Medium)
             if (searching) {
-                Text("Search by city or postal code, then choose a match.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
-                CitySearchField(
-                    query = query,
-                    onQueryChange = { query = it; results = emptyList(); message = null },
-                    onSearch = ::search,
-                    onKeyboardDismiss = { searchButton.requestFocus() },
-                    onFocused = { fieldFocused = it },
-                    modifier = Modifier.fillMaxWidth().navigationSound()
-                        .border(if (fieldFocused) 2.dp else 1.dp, if (fieldFocused) Color.White else Color(0xFF526480), RoundedCornerShape(12.dp)),
-                )
-                NavChip(if (busy) "Searching…" else "Search", onClick = ::search, modifier = Modifier.fillMaxWidth().focusRequester(searchButton))
+                Text("Use the remote to enter a city or postal code. Back returns to Settings.", color = Color(0xFFA6B6D0), fontSize = 11.sp)
+                Text(query.ifEmpty { "City or postal code" }, color = if (query.isEmpty()) Color(0xFF899BB9) else Color.White, fontSize = 16.sp,
+                    modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFF526480), RoundedCornerShape(12.dp)).padding(10.dp))
+                if (editing) {
+                    CityKeyboard(query, firstKey, onChange = { query = it; results = emptyList(); message = null }, onSearch = ::search)
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        NavChip("Edit city", onClick = { editing = true }, modifier = Modifier.weight(1f).focusRequester(editButton))
+                        NavChip(if (busy) "Searching…" else "Search again", onClick = ::search, modifier = Modifier.weight(1f).focusRequester(searchButton))
+                    }
+                }
                 message?.let { Text(it, color = Color(0xFFA6B6D0), fontSize = 12.sp) }
                 results.forEachIndexed { index, location ->
                     NavChip(location.label, onClick = {
@@ -126,7 +144,7 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
                 SourceLink("Places by GeoNames", "https://www.geonames.org/")
             } else {
                 Text("WEATHER", color = Color(0xFF9CACCA), fontSize = 10.sp, letterSpacing = 1.7.sp)
-                NavChip(weather.settings.location?.label ?: "Choose a city", onClick = { searching = true }, modifier = Modifier.fillMaxWidth().focusRequester(first))
+                NavChip(weather.settings.location?.label ?: "Choose a city", onClick = { editing = true; searching = true }, modifier = Modifier.fillMaxWidth().focusRequester(first))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TemperatureUnit.entries.forEach { unit ->
                         NavChip(if (unit == TemperatureUnit.FAHRENHEIT) "Fahrenheit  °F" else "Celsius  °C", selected = weather.settings.unit == unit, onClick = {

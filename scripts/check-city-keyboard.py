@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""Device regression: open city search first, then verify Back never traps the IME.
-
-Run only against the separately installed preview. No preferences are changed.
-"""
+"""Open Home Preview's city entry, then verify it never opens/traps the system IME."""
 import argparse
 import re
 import subprocess
@@ -11,30 +8,17 @@ import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--serial", required=True)
-parser.add_argument("--package", default="nyc.arash.homescreen.studio.debug")
 args = parser.parse_args()
-if not args.package.endswith(".debug"):
-    parser.error("Use a preview package ending in .debug")
 
 
 def adb(*command):
     return subprocess.run(["adb", "-s", args.serial, *command], check=True, capture_output=True, text=True).stdout
 
 
-def visible():
-    result = re.search(r"mInputShown=(true|false)", adb("shell", "dumpsys", "input_method"))
-    if not result:
-        raise RuntimeError("Could not read keyboard visibility")
-    return result.group(1) == "true"
-
-
-def wait_visibility(expected):
-    deadline = time.monotonic() + 6
-    while time.monotonic() < deadline:
-        if visible() == expected:
-            return
-        time.sleep(0.2)
-    raise AssertionError(f"Keyboard visibility should be {expected}")
+def assert_no_ime():
+    state = adb("shell", "dumpsys", "input_method")
+    if "mInputShown=false" not in state:
+        raise AssertionError("City entry must not open the system keyboard")
 
 
 def hierarchy():
@@ -45,39 +29,37 @@ def hierarchy():
     return ET.fromstring(adb("shell", "cat", path))
 
 
-# Begin with a visible keyboard, selecting the editor explicitly if necessary.
-if not visible():
-    adb("shell", "input", "keyevent", "23")
-wait_visibility(True)
+def contains(root, text):
+    return any(node.get("text") == text for node in root.iter("node"))
 
-# A real Back press must close the IME while keeping city search open.
-adb("shell", "input", "keyevent", "4")
-wait_visibility(False)
+
 root = hierarchy()
-editor = next((node for node in root.iter("node") if (node.get("class") == "android.widget.EditText" or node.get("content-desc") == "City or postal code") and node.get("package") == args.package), None)
-if editor is None:
-    raise AssertionError("Back must leave the city editor available")
-time.sleep(1)
-if visible():
-    raise AssertionError("Keyboard reopened without selecting the editor")
-
-# Explicitly selecting the editor can open it again, and Back must work again.
-bounds = list(map(int, re.findall(r"\d+", editor.get("bounds", ""))))
-if len(bounds) != 4:
-    raise AssertionError("City editor has no usable bounds")
-adb("shell", "input", "tap", str((bounds[0] + bounds[2]) // 2), str((bounds[1] + bounds[3]) // 2))
-if not visible():
-    adb("shell", "input", "keyevent", "23")
-wait_visibility(True)
-adb("shell", "input", "keyevent", "4")
-wait_visibility(False)
-time.sleep(1)
-if visible():
-    raise AssertionError("Keyboard reopened after the second dismissal")
-
-# Another Back returns to the settings screen instead of reopening the editor.
+if not contains(root, "Choose your city"):
+    raise AssertionError("Open Home Preview → Settings → Choose a city first")
+assert_no_ime()
+adb("shell", "input", "keyevent", "22")
+adb("shell", "input", "keyevent", "21")
 adb("shell", "input", "keyevent", "4")
 root = hierarchy()
-if not any(node.get("text") == "Home Settings" for node in root.iter("node")):
-    raise AssertionError("Second Back did not return to Home Settings")
-print("PASS: Back dismisses the keyboard, it stays closed, explicit reopen works, and Back returns to Settings.")
+if not contains(root, "Home Settings"):
+    raise AssertionError("Back did not return directly to Home Settings")
+assert_no_ime()
+
+# Reopen the first weather setting (saved city or Choose a city), preserving its value.
+weather = next(n for n in root.iter("node") if n.get("text") == "WEATHER")
+weather_bottom = int(re.findall(r"\d+", weather.get("bounds"))[3])
+buttons = [n for n in root.iter("node") if n.get("clickable") == "true" and n.get("bounds")]
+buttons = [n for n in buttons if int(re.findall(r"\d+", n.get("bounds"))[1]) >= weather_bottom]
+button = min(buttons, key=lambda n: int(re.findall(r"\d+", n.get("bounds"))[1]))
+x1, y1, x2, y2 = map(int, re.findall(r"\d+", button.get("bounds")))
+adb("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
+root = hierarchy()
+if not contains(root, "Choose your city"):
+    raise AssertionError("City entry did not reopen")
+time.sleep(1)
+assert_no_ime()
+adb("shell", "input", "keyevent", "4")
+if not contains(hierarchy(), "Home Settings"):
+    raise AssertionError("Repeated Back did not return to Settings")
+assert_no_ime()
+print("PASS: city entry/reopen never shows the system keyboard; Back repeatedly returns to Settings.")

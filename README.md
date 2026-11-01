@@ -59,10 +59,10 @@ and open Home from your apps. Home-button and boot integration require the compa
 ## Weather and settings
 
 Open the gear in the top right for **Home Settings**. Choose **Choose a city**, enter
-a city or postal code with the TV keyboard, select **Search**, then pick the matching
-city and region. The native city editor has an explicit Search action. **Back**
-closes the keyboard and moves focus to Search; another Back returns to Settings.
-Dismissed keyboards stay closed until you select the editor again.
+a city or postal code with the app’s remote-friendly keyboard, select **Search**,
+then pick the matching city and region. **Delete**, **Clear**, and **Back to Settings**
+are explicit controls. **Back** returns directly to Settings. This screen never opens
+the Fire TV system keyboard. A connected hardware keyboard can also type/search.
 Select **Fahrenheit** or **Celsius**, then **Done**. The same screen
 keeps a **Fire TV Settings** shortcut. Back from city search returns to Home Settings.
 
@@ -114,8 +114,8 @@ favorites. Only releases signed by the same key can update an existing install.
 
 For the Fire TV keyboard regression, open Home Preview → Settings → Choose a city,
 then run `python3 scripts/check-city-keyboard.py --serial <device-serial>`. The check
-verifies Back dismissal, no automatic reopening, explicit reopening, and return to
-Settings without changing saved preferences.
+verifies city entry opens without a system keyboard, Back returns to Settings, and
+city entry can be reopened and exited without changing saved preferences.
 
 ## Build and publish
 
