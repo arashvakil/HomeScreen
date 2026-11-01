@@ -1,5 +1,6 @@
 package nyc.arash.homescreen.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -12,6 +13,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.clip
@@ -102,7 +105,7 @@ internal fun WeatherForecastDialog(weather: WeatherState, onSettings: () -> Unit
                             Text(day.probability?.let { "$it%" } ?: "—", color = WeatherAccent, fontSize = 12.sp, modifier = Modifier.width(40.dp))
                             Text(if ((day.snowCm ?: 0.0) > 0) "Snow ${unit.snow(day.snowCm)}" else unit.precipitation(day.precipitationMm), color = Color(0xFF8EA8BD), fontSize = 11.sp, modifier = Modifier.width(70.dp))
                             Text(day.lowC?.let { unit.format(it) } ?: "—", color = Color(0xFF8399AE), fontSize = 12.sp)
-                            Box(Modifier.width(60.dp).height(4.dp).clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(Color(0xFF83AEC7), Color(0xFFE5C69B)))))
+                            DailyRangeBar(day, reading.daily)
                             Text(day.highC?.let { unit.format(it) } ?: "—", color = Color(0xFFE9F0F7), fontSize = 12.sp)
                         }
                     }
@@ -122,4 +125,23 @@ private fun ForecastCard(modifier: Modifier, content: @Composable ColumnScope.()
         .border(if (focused) 2.dp else 1.dp, if (focused) Color(0xFFD5EBFA) else Color(0x16FFFFFF), RoundedCornerShape(16.dp))
         .focusable().background(if (focused) Color(0xFF263F58) else Color(0x09FFFFFF), RoundedCornerShape(16.dp)).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(5.dp), content = content)
+}
+
+/** Compare each day's actual low/high against the full week's temperature range. */
+@Composable
+private fun DailyRangeBar(day: DailyForecast, week: List<DailyForecast>) {
+    val minimum = week.mapNotNull { it.lowC }.minOrNull()
+    val maximum = week.mapNotNull { it.highC }.maxOrNull()
+    Canvas(Modifier.width(60.dp).height(4.dp)) {
+        val center = size.height / 2
+        drawLine(Color(0x19FFFFFF), Offset(0f, center), Offset(size.width, center), size.height, StrokeCap.Round)
+        val low = day.lowC
+        val high = day.highC
+        if (minimum != null && maximum != null && low != null && high != null) {
+            val span = (maximum - minimum).coerceAtLeast(1.0)
+            val start = (((low - minimum) / span).coerceIn(0.0, 1.0) * size.width).toFloat()
+            val end = (((high - minimum) / span).coerceIn(0.0, 1.0) * size.width).toFloat().coerceAtLeast(start)
+            drawLine(Brush.horizontalGradient(listOf(Color(0xFF83AEC7), Color(0xFFE5C69B))), Offset(start, center), Offset(end, center), size.height, StrokeCap.Round)
+        }
+    }
 }
