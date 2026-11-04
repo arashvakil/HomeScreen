@@ -99,8 +99,8 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
 
     Box(Modifier.fillMaxSize().background(Color(0xFF080B16))) {
         Canvas(Modifier.fillMaxSize()) {
-            drawRect(Brush.radialGradient(listOf(Color(0xFF203D64), Color.Transparent), Offset(size.width * .25f, 0f), size.width * .82f))
-            drawRect(Brush.radialGradient(listOf(Color(0xFF251D43), Color.Transparent), Offset(size.width * .94f, size.height * .85f), size.width * .8f))
+            drawRect(Brush.radialGradient(listOf(Color(0xFF142B49), Color.Transparent), Offset(size.width * .25f, 0f), size.width * .82f))
+            drawRect(Brush.radialGradient(listOf(Color(0xFF211532), Color.Transparent), Offset(size.width * .94f, size.height * .85f), size.width * .8f))
             drawRect(Brush.verticalGradient(listOf(Color.Transparent, Color(0x99040912))))
         }
         Column(Modifier.fillMaxSize().padding(horizontal = 44.dp).padding(top = 25.dp, bottom = 12.dp)) {
