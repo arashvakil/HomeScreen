@@ -97,7 +97,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
         else if (apps.isNotEmpty()) focusRequest++
     }
 
-    Box(Modifier.fillMaxSize().background(Color(0xFF070D19))) {
+    Box(Modifier.fillMaxSize().background(Color(0xFF080B16))) {
         Canvas(Modifier.fillMaxSize()) {
             drawRect(Brush.radialGradient(listOf(Color(0xFF203D64), Color.Transparent), Offset(size.width * .25f, 0f), size.width * .82f))
             drawRect(Brush.radialGradient(listOf(Color(0xFF251D43), Color.Transparent), Offset(size.width * .94f, size.height * .85f), size.width * .8f))
