@@ -23,6 +23,7 @@ internal class FavoriteSyncState(
 ) {
     private var saved by mutableStateOf(store.read())
     val favoriteIds: List<String> get() = saved.favorites
+    val serviceConfigured: Boolean get() = client.serviceConfigured
     val linked: Boolean get() = saved.token != null
     val revoking: Boolean get() = saved.revoking != null
     var busy by mutableStateOf(false)
@@ -83,6 +84,7 @@ internal class FavoriteSyncState(
                 error = when (failure) {
                     is SyncHttpException -> when (failure.status) {
                         400, 404, 410, 422 -> "That code is invalid or expired. Ask the other TV for a new code."
+                        403 -> "New setups are closed on this server. Use a pairing code from an already linked TV."
                         401 -> "This TV's link was removed. Link it again to sync."
                         429 -> "Too many attempts. Please wait a minute and try again."
                         else -> "Could not sync. Your favorites are saved on this TV."

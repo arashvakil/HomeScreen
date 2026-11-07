@@ -58,6 +58,11 @@ and open Home from your apps. Home-button and boot integration require the compa
 
 ## Sync favorites between TVs
 
+Favorites sync requires a service you host. Public releases have no default sync
+server. Follow [the self-hosting guide](server/sync/README.md) to deploy the service
+and build the app with `-PfavoritesSyncUrl=https://sync.example.com/sync/v1`. Each linked
+TV remembers its service URL across app updates.
+
 Open **Home Settings → Favorites sync** on the TV whose layout you want to share,
 then choose **Share this TV’s favorites**. On another TV, choose **Join an existing
 setup** and enter the eight-character code. Joining adopts the shared favorites.
@@ -72,7 +77,7 @@ The linked screen offers **Link another TV**, **Sync now**, and **Unlink this TV
 Unlinking keeps the current local favorites. Device access keys stay in private app
 storage, which is excluded from Android backup. Clearing app data removes the link.
 
-The default sync endpoint is `https://homescreen.arash.nyc/sync/v1`. Only favorites,
+Only favorites,
 revisions, and device names are stored by the service. See [the sync service](server/sync/README.md)
 for deployment, persistence, and recovery details.
 

@@ -62,12 +62,13 @@ def device_name(value):
 
 
 class Store:
-    def __init__(self, filename, secret, clock=time.time):
+    def __init__(self, filename, secret, clock=time.time, allow_group_creation=True):
         if len(secret) < 32:
             raise ValueError("SYNC_SECRET must contain at least 32 bytes")
         self.filename = filename
         self.secret = secret
         self.clock = clock
+        self.allow_group_creation = allow_group_creation
         with self.connection() as db:
             db.execute("PRAGMA journal_mode=WAL")
             db.executescript("""
@@ -170,6 +171,8 @@ class Store:
         with self.transaction() as db:
             device = self.existing_claim(db, claim, request_hash)
             if device is None:
+                if not self.allow_group_creation:
+                    raise ApiError(403, "setup_disabled")
                 group = str(uuid.uuid4())
                 db.execute("INSERT INTO groups VALUES (?,1,?)", (group, json.dumps(ordered)))
                 db.execute("INSERT INTO devices VALUES (?,?,?,?,?,0)", (digest(token), digest(claim), request_hash, group, name))
@@ -413,7 +416,10 @@ def main():
     filename = os.environ.get("SYNC_DB", "/data/sync.sqlite3")
     secret = os.environ.get("SYNC_SECRET", "").encode()
     os.umask(0o077)
-    store = Store(filename, secret)
+    creation = os.environ.get("SYNC_ALLOW_GROUP_CREATION", "true").lower()
+    if creation not in ("true", "false"):
+        raise ValueError("SYNC_ALLOW_GROUP_CREATION must be true or false")
+    store = Store(filename, secret, allow_group_creation=creation == "true")
     server = Server((args.host, args.port), store)
     def stop(*_):
         threading.Thread(target=server.shutdown, daemon=True).start()

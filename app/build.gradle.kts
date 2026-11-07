@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.net.URI
 
 plugins {
     id("com.android.application")
@@ -9,6 +10,12 @@ plugins {
 val personalLauncher = providers.gradleProperty("personalLauncher").orNull != "false"
 val updateManifestUrl = providers.gradleProperty("updateManifestUrl").orElse("https://github.com/arashvakil/HomeScreen/releases/latest/download/update.json").get()
 require(updateManifestUrl.startsWith("https://") && !updateManifestUrl.contains('"') && !updateManifestUrl.contains('\n') && !updateManifestUrl.contains('\\')) { "updateManifestUrl must be an HTTPS URL" }
+val favoritesSyncUrl = providers.gradleProperty("favoritesSyncUrl").orElse("").get().trim().trimEnd('/')
+require(favoritesSyncUrl.isEmpty() || runCatching {
+    val uri = URI(favoritesSyncUrl)
+    uri.scheme == "https" && !uri.host.isNullOrBlank() && uri.userInfo == null && uri.query == null && uri.fragment == null &&
+        !favoritesSyncUrl.contains('"') && !favoritesSyncUrl.contains('\\')
+}.getOrDefault(false)) { "favoritesSyncUrl must be an HTTPS base URL without credentials, query, or fragment" }
 val keystorePropsFile = rootProject.file(if (personalLauncher) "personal-keystore.properties" else "keystore.properties")
 val keystoreProps = Properties().apply {
     if (keystorePropsFile.exists()) load(keystorePropsFile.inputStream())
@@ -22,10 +29,10 @@ android {
         applicationId = if (personalLauncher) "nyc.arash.homescreen.studio" else "nyc.arash.homescreen"
         minSdk = 22
         targetSdk = 34
-        versionCode = 5
-        versionName = "0.5.0"
+        versionCode = 6
+        versionName = "0.6.0"
         buildConfigField("boolean", "AUTO_UPDATE_ENABLED", "true")
-        buildConfigField("String", "FAVORITES_SYNC_URL", "\"https://homescreen.arash.nyc/sync/v1\"")
+        buildConfigField("String", "FAVORITES_SYNC_URL", "\"$favoritesSyncUrl\"")
         buildConfigField("String", "UPDATE_MANIFEST_URL", "\"$updateManifestUrl\"")
     }
 
