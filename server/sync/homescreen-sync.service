@@ -1,0 +1,35 @@
+[Unit]
+Description=HomeScreen favorites sync
+After=network.target
+
+[Service]
+Type=simple
+User=homescreen-sync
+Group=homescreen-sync
+WorkingDirectory=/opt/homescreen-sync
+ExecStart=/usr/bin/python3.11 /opt/homescreen-sync/service.py --host 127.0.0.1 --port 8787
+EnvironmentFile=/etc/homescreen-sync.env
+Environment=SYNC_DB=/var/lib/homescreen-sync/sync.sqlite3
+StateDirectory=homescreen-sync
+StateDirectoryMode=0700
+UMask=0077
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+MemoryMax=128M
+CPUQuota=25%
+TasksMax=32
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

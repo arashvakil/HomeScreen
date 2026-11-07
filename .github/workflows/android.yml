@@ -26,6 +26,8 @@ jobs:
           log-accepted-android-sdk-licenses: false
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - name: Test favorites sync service
+        run: python3 -m unittest discover -s server/sync -p 'test_*.py'
       - name: Test, build, and lint
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease :app:lintDebug --no-daemon
       - name: Save TV test build

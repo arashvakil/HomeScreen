@@ -1,9 +1,10 @@
 package nyc.arash.homescreen.apps
 
 import android.content.Context
+import nyc.arash.homescreen.sync.FavoriteSyncStore
 
 /** Device-local ordering. Missing packages retain their position if installed again later. */
-class LauncherLayout(context: Context) {
+class LauncherLayout(private val context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("launcher_layout", Context.MODE_PRIVATE)
 
     fun favoriteIds(): List<String> {
@@ -12,7 +13,7 @@ class LauncherLayout(context: Context) {
     }
 
     fun saveFavorites(ids: List<String>) {
-        preferences.edit().putString(KEY_FAVORITES, normalizeFavorites(ids).joinToString("\n")).apply()
+        FavoriteSyncStore(context).saveLocal(ids)
     }
 
     companion object {

@@ -34,6 +34,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import nyc.arash.homescreen.apps.LauncherLayout
+import nyc.arash.homescreen.sync.rememberFavoriteSync
 import nyc.arash.homescreen.apps.TvApp
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,8 +53,9 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
     var forecastOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
-    val layout = remember { LauncherLayout(context) }
-    var favoriteIds by remember { mutableStateOf(layout.favoriteIds()) }
+    val sync = rememberFavoriteSync(resumeGeneration)
+    val favoriteIds = sync.favoriteIds
+    var syncOpen by remember { mutableStateOf(false) }
     var allApps by remember(resumeGeneration) { mutableStateOf(false) }
     var arranging by remember(resumeGeneration) { mutableStateOf<TvApp?>(null) }
     val firstTile = remember { FocusRequester() }
@@ -78,7 +80,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
         val observed = Instant.ofEpochMilli(it.observedAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))
         "${if (weather.failed) "Update unavailable · " else ""}Open-Meteo · as of $observed"
     } ?: "Weather by Open-Meteo"
-    fun save(ids: List<String>) { layout.saveFavorites(ids); favoriteIds = layout.favoriteIds() }
+    fun save(ids: List<String>) { sync.saveFavorites(ids) }
 
     LaunchedEffect(apps.isNotEmpty(), allApps, focusRequest, resumeGeneration) {
         if (apps.isNotEmpty()) {
@@ -187,7 +189,11 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
             }
         }
         if (forecastOpen) WeatherForecastDialog(weather, onSettings = { forecastOpen = false; settingsOpen = true }, onDismiss = { forecastOpen = false })
-        if (settingsOpen) WeatherSettingsDialog(weather, onDismiss = { settingsOpen = false })
+        if (settingsOpen) WeatherSettingsDialog(weather, syncStatus = if (sync.linked) sync.status else "Link another TV", onSync = {
+            settingsOpen = false
+            syncOpen = true
+        }, onDismiss = { settingsOpen = false })
+        if (syncOpen) FavoriteSyncDialog(sync, onDismiss = { syncOpen = false; settingsOpen = true })
         arranging?.let { app ->
             ArrangeDialog(app, favoriteIds, onSave = ::save, onDismiss = { arranging = null })
         }
