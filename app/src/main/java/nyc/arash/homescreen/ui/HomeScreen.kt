@@ -22,7 +22,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +50,6 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
     val weather = rememberWeather(resumeGeneration)
     var settingsOpen by remember { mutableStateOf(false) }
     var forecastOpen by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     val inputMode = LocalInputModeManager.current
     val sync = rememberFavoriteSync(resumeGeneration)
     val favoriteIds = sync.favoriteIds
