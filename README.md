@@ -56,6 +56,26 @@ accessibility service or uninstall the companion.
 You can also install just the launcher with `adb -s <fire-tv-ip>:5555 install -r <apk>`
 and open Home from your apps. Home-button and boot integration require the companion.
 
+## Sync favorites between TVs
+
+Open **Home Settings → Favorites sync** on the TV whose layout you want to share,
+then choose **Share this TV’s favorites**. On another TV, choose **Join an existing
+setup** and enter the eight-character code. Joining adopts the shared favorites.
+Codes expire after 15 minutes and work once. No account or registration is required.
+
+Favorites and their order sync automatically while Home is open, when returning to
+Home, and periodically in the background. Offline edits are saved on the TV and
+merged when it reconnects. Apps missing from one TV retain their shared positions
+and appear when installed. Weather location and units stay local to each TV.
+
+The linked screen offers **Link another TV**, **Sync now**, and **Unlink this TV**.
+Unlinking keeps the current local favorites. Device access keys stay in private app
+storage, which is excluded from Android backup. Clearing app data removes the link.
+
+The default sync endpoint is `https://homescreen.arash.nyc/sync/v1`. Only favorites,
+revisions, and device names are stored by the service. See [the sync service](server/sync/README.md)
+for deployment, persistence, and recovery details.
+
 ## Weather and settings
 
 Select **Set up weather** on a fresh installation, or open the gear for **Home Settings**. Choose **Choose a city**, enter

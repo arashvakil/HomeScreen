@@ -22,9 +22,10 @@ android {
         applicationId = if (personalLauncher) "nyc.arash.homescreen.studio" else "nyc.arash.homescreen"
         minSdk = 22
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
         buildConfigField("boolean", "AUTO_UPDATE_ENABLED", "true")
+        buildConfigField("String", "FAVORITES_SYNC_URL", "\"https://homescreen.arash.nyc/sync/v1\"")
         buildConfigField("String", "UPDATE_MANIFEST_URL", "\"$updateManifestUrl\"")
     }
 

@@ -39,7 +39,7 @@ import nyc.arash.homescreen.weather.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit) {
+internal fun WeatherSettingsDialog(weather: WeatherState, syncStatus: String, onSync: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var searching by remember { mutableStateOf(false) }
@@ -166,6 +166,7 @@ internal fun WeatherSettingsDialog(weather: WeatherState, onDismiss: () -> Unit)
                 Text("Your chosen city and units are remembered on this TV.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
                 SourceLink("Weather by Open-Meteo (CC BY 4.0)", "https://open-meteo.com/")
                 Spacer(Modifier.height(3.dp))
+                NavChip("Favorites sync · $syncStatus", onClick = onSync, modifier = Modifier.fillMaxWidth())
                 NavChip("Fire TV Settings", onClick = {
                     runCatching { context.startActivity(Intent(Intent.ACTION_MAIN).addCategory("android.intent.category.LEANBACK_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
                         .onFailure { Toast.makeText(context, "System settings are unavailable.", Toast.LENGTH_SHORT).show() }
