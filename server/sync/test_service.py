@@ -147,6 +147,29 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(reopened.get(source["deviceToken"])["favorites"], FAVORITES)
         self.assertEqual(reopened.create(body)["deviceToken"], source["deviceToken"])
 
+    def test_closed_registration_rejects_new_groups_without_writing(self):
+        self.store = Store(self.filename, b"x" * 32, lambda: self.now, allow_group_creation=False)
+        error = self.error(403, self.store.create, {"claimId": claim(), "favorites": FAVORITES})
+        self.assertEqual(error, {"error": "setup_disabled"})
+        with self.store.connection() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM groups").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT count(*) FROM devices").fetchone()[0], 0)
+
+    def test_closed_registration_preserves_retries_sync_and_invitations(self):
+        source, body = self.create()
+        self.store = Store(self.filename, b"x" * 32, lambda: self.now, allow_group_creation=False)
+        retry = self.store.create(body)
+        self.assertEqual(retry["deviceToken"], source["deviceToken"])
+        joined, _ = self.join(retry)
+        updated = self.write(joined["deviceToken"], 1, list(reversed(FAVORITES)))
+        self.assertEqual(self.store.get(source["deviceToken"]), updated)
+        invitation = self.store.pair(source["deviceToken"])
+        another, _ = self.join(invitation)
+        self.assertEqual(self.store.get(another["deviceToken"]), updated)
+        self.store.unlink(another["deviceToken"])
+        self.error(401, self.store.get, another["deviceToken"])
+        self.error(403, self.store.create, {"claimId": claim(), "favorites": []})
+
     def test_input_validation_and_deduplication(self):
         bad_lists = [None, "com.plexapp.android", ["not a package"], [1], ["a.b"] * 129]
         for ordered in bad_lists:
@@ -205,6 +228,12 @@ class HttpTests(unittest.TestCase):
         status, _, _ = self.request("DELETE", "/v1/device", token=token)
         self.assertEqual(status, 204)
         self.assertEqual(self.request("GET", "/v1/favorites", token=token)[0], 401)
+
+    def test_http_closed_registration_returns_setup_disabled(self):
+        self.server.store.allow_group_creation = False
+        status, body, headers = self.request("POST", "/v1/groups", {"claimId": claim(), "favorites": FAVORITES})
+        self.assertEqual((status, body), (403, {"error": "setup_disabled"}))
+        self.assertEqual(headers["Cache-Control"], "no-store")
 
     def test_http_health_auth_body_and_rate_limits(self):
         self.assertEqual(self.request("GET", "/health")[0:2], (200, {"status": "ok"}))

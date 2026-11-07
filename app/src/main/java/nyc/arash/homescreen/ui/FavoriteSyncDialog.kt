@@ -1,5 +1,8 @@
 package nyc.arash.homescreen.ui
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +34,7 @@ import kotlinx.coroutines.flow.first
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 internal fun FavoriteSyncDialog(sync: FavoriteSyncState, onDismiss: () -> Unit) {
+    val context = LocalContext.current
     var joining by remember { mutableStateOf(false) }
     var confirmUnlink by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf("") }
@@ -101,6 +105,13 @@ internal fun FavoriteSyncDialog(sync: FavoriteSyncState, onDismiss: () -> Unit) 
             Text("Link your TVs once. Your favorites and their order follow you between homes.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
             if (sync.revoking) Text("Unlinking when this TV is online.", color = Color(0xFFA6B6D0), fontSize = 12.sp)
             when {
+                !sync.serviceConfigured -> {
+                    Text("Favorites sync uses a service you host. Follow the guide to run your service and build HomeScreen with its HTTPS URL.", color = Color.White, fontSize = 14.sp)
+                    NavChip("Self-hosting guide", onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/arashvakil/HomeScreen/tree/main/server/sync"))
+                        runCatching { context.startActivity(intent) }
+                    }, modifier = Modifier.fillMaxWidth().focusRequester(first))
+                }
                 confirmUnlink -> {
                     Text("Unlink this TV? Its current favorites will stay here. Future changes will be saved on this TV only.", color = Color.White, fontSize = 14.sp)
                     NavChip("Keep this TV linked", onClick = { confirmUnlink = false }, modifier = Modifier.fillMaxWidth().focusRequester(first), enabled = !busy)

@@ -22,7 +22,8 @@ internal data class PairingCode(val code: String, val expiresAt: Long)
 
 internal class FavoriteSyncClient(context: Context) {
     private val store = FavoriteSyncStore(context)
-    private val api = FavoriteSyncApi()
+    private val api = FavoriteSyncApi(store)
+    val serviceConfigured: Boolean get() = api.configured
 
     suspend fun sync(): Unit = inNetwork { syncLocked() }
 
@@ -30,6 +31,7 @@ internal class FavoriteSyncClient(context: Context) {
         var saved = store.read()
         check(saved.token == null) { "This TV is already linked." }
         check(saved.revoking == null) { "Finish unlinking this TV before linking it again." }
+        api.prepareEndpoint()
         val normalizedCode = code.uppercase(Locale.ROOT).filterNot { it.isWhitespace() || it == '-' }
         if (saved.claim != null) {
             check(saved.claim.kind == kind && saved.claim.code == normalizedCode) { "Retry the unfinished link before starting a different one." }
@@ -50,7 +52,7 @@ internal class FavoriteSyncClient(context: Context) {
         } catch (error: SyncHttpException) {
             // A definitive rejected request can be replaced with a fresh code. A transport
             // failure keeps the claim so a committed request is safely recovered on retry.
-            if (error.status in listOf(400, 404, 410, 422)) store.update { it.copy(claim = null, edits = emptyList()) }
+            if (error.status in listOf(400, 404, 410, 422) || (error.status == 403 && error.response.optString("error") == "setup_disabled")) store.update { it.copy(claim = null, edits = emptyList()) }
             throw error
         }
         val remote = response.remote()
@@ -155,9 +157,27 @@ internal class FavoriteSyncClient(context: Context) {
     }
 }
 
-private class FavoriteSyncApi {
+private class FavoriteSyncApi(private val store: FavoriteSyncStore) {
+    private fun endpoint(): String {
+        val saved = store.read()
+        return SyncServiceEndpoint.choose(
+            store.preferences.getString(SERVICE_URL, "").orEmpty(), BuildConfig.FAVORITES_SYNC_URL,
+            saved.token != null || saved.claim != null || saved.revoking != null,
+        )
+    }
+    val configured: Boolean get() = endpoint().isNotEmpty()
+
+    fun prepareEndpoint(): String {
+        val url = endpoint()
+        check(url.isNotEmpty()) { "Configure your self-hosted sync service before pairing TVs. See the self-hosting guide." }
+        if (store.preferences.getString(SERVICE_URL, "") != url) {
+            check(store.preferences.edit().putString(SERVICE_URL, url).commit()) { "Could not save the sync service on this TV." }
+        }
+        return url
+    }
+
     fun request(method: String, path: String, token: String? = null, body: JSONObject? = null): JSONObject {
-        val builder = Request.Builder().url(BuildConfig.FAVORITES_SYNC_URL.trimEnd('/') + path)
+        val builder = Request.Builder().url(prepareEndpoint() + path)
             .header("Accept", "application/json").header("Cache-Control", "no-store")
         token?.let { builder.header("Authorization", "Bearer $it") }
         val requestBody = (body ?: JSONObject()).toString().toRequestBody("application/json".toMediaType())
@@ -172,6 +192,7 @@ private class FavoriteSyncApi {
     }
 
     companion object {
+        private const val SERVICE_URL = "favorites_sync_url_v1"
         private val client = OkHttpClient.Builder().connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS).callTimeout(20, TimeUnit.SECONDS)
             .followRedirects(false).followSslRedirects(false).build()
