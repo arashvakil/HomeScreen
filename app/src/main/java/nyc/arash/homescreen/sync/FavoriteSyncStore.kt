@@ -20,12 +20,19 @@ internal data class SavedSync(
     val revoking: String? = null,
     val lastSyncedAt: Long = 0,
 ) {
-    fun withLocalFavorites(next: List<String>, nextId: () -> String): SavedSync {
+    fun withLocalFavorites(
+        next: List<String>,
+        nextId: () -> String,
+        displayedFavorites: List<String>? = null,
+    ): SavedSync {
+        val rebased = if (displayedFavorites == null) next else FavoriteEdits.apply(
+            favorites, FavoriteEdits.between(displayedFavorites, next, nextId),
+        )
         val pendingIds = pending?.editIds.orEmpty()
         val submitted = edits.filter { it.editId in pendingIds }
         val baseline = pending?.favorites ?: claim?.favorites ?: base
-        val nextEdits = if (token != null || claim != null) FavoriteEdits.between(baseline, next, nextId) else emptyList()
-        return copy(favorites = next, edits = submitted + nextEdits)
+        val nextEdits = if (token != null || claim != null) FavoriteEdits.between(baseline, rebased, nextId) else emptyList()
+        return copy(favorites = rebased, edits = submitted + nextEdits)
     }
 
     fun accepted(remote: RemoteFavorites, acknowledged: List<String>, now: Long): SavedSync {
@@ -49,9 +56,10 @@ internal class FavoriteSyncStore(context: Context) {
         next
     }
 
-    fun saveLocal(ids: List<String>) = update { old ->
+    fun saveLocal(ids: List<String>, displayedFavorites: List<String>? = null) = update { old ->
         val next = LauncherLayout.normalizeFavorites(ids)
-        old.withLocalFavorites(next, ::uuid)
+        val displayed = displayedFavorites?.let { LauncherLayout.normalizeFavorites(it) }
+        old.withLocalFavorites(next, ::uuid, displayed)
     }
 
     fun accept(remote: RemoteFavorites, acknowledged: List<String> = emptyList()): SavedSync = update { old ->

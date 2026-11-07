@@ -46,9 +46,9 @@ internal class FavoriteSyncState(
     fun clearError() { error = null }
     fun closeCode() { pairCode = null; pairCodeExpiresAt = 0L }
 
-    fun saveFavorites(ids: List<String>) {
+    fun saveFavorites(ids: List<String>, displayedFavorites: List<String>) {
         try {
-            saved = store.saveLocal(ids)
+            saved = store.saveLocal(ids, displayedFavorites)
             syncNow()
         } catch (_: Exception) {
             error = "Could not save favorites on this TV. Try again."

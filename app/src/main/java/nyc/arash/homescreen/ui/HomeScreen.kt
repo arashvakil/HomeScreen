@@ -78,7 +78,7 @@ fun HomeScreen(apps: List<TvApp>, resumeGeneration: Int = 0, updateVersion: Stri
         val observed = Instant.ofEpochMilli(it.observedAt).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("h:mm a", Locale.getDefault()))
         "${if (weather.failed) "Update unavailable · " else ""}Open-Meteo · as of $observed"
     } ?: "Weather by Open-Meteo"
-    fun save(ids: List<String>) { sync.saveFavorites(ids) }
+    fun save(ids: List<String>) { sync.saveFavorites(ids, favoriteIds) }
 
     LaunchedEffect(apps.isNotEmpty(), allApps, focusRequest, resumeGeneration) {
         if (apps.isNotEmpty()) {

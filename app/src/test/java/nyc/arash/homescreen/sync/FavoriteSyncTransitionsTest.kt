@@ -45,6 +45,28 @@ class FavoriteSyncTransitionsTest {
         assertEquals(emptyList<FavoriteEdit>(), edited.edits)
     }
 
+    @Test fun staleDisplayedReorderPreservesAppJustAddedRemotely() {
+        val latest = linked(listOf("a", "b", "remote"))
+        val edited = latest.withLocalFavorites(listOf("b", "a"), ::nextId, listOf("a", "b"))
+        assertEquals(listOf("b", "a", "remote"), edited.favorites)
+        assertEquals(listOf("b", "a", "remote"), FavoriteEdits.apply(latest.base, edited.edits))
+    }
+
+    @Test fun staleDisplayedMoveDoesNotResurrectAppJustRemovedRemotely() {
+        val latest = linked(listOf("a", "remote"))
+        val edited = latest.withLocalFavorites(listOf("b", "a"), ::nextId, listOf("a", "b"))
+        assertEquals(listOf("a", "remote"), edited.favorites)
+        assertEquals(emptyList<FavoriteEdit>(), edited.edits)
+    }
+
+    @Test fun staleDisplayedRemovalPreservesRemoteAdditionAndPendingLocalEdit() {
+        val latest = linked(listOf("a", "b", "remote"))
+            .withLocalFavorites(listOf("b", "a", "remote"), ::nextId)
+        val edited = latest.withLocalFavorites(listOf("a"), ::nextId, listOf("a", "b"))
+        assertEquals(listOf("a", "remote"), edited.favorites)
+        assertEquals(listOf("a", "remote"), FavoriteEdits.apply(latest.base, edited.edits))
+    }
+
     @Test fun concurrentAdditionsRetainEveryAppWhenSharedCapacityIsExceeded() {
         val base = (1..127).map { "app.$it" }
         val edited = linked(base).withLocalFavorites(base + "app.local", ::nextId)
